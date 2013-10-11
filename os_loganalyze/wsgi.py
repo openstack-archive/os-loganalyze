@@ -229,10 +229,10 @@ def get_min_sev(environ):
         return "NONE"
 
 
-def application(environ, start_response):
+def application(environ, start_response, root_path='/srv/static/logs/'):
     status = '200 OK'
 
-    logpath = safe_path('/srv/static/logs/', environ)
+    logpath = safe_path(root_path, environ)
     if not logpath:
         status = '400 Bad Request'
         response_headers = [('Content-type', 'text/plain')]

@@ -18,6 +18,9 @@
 Test the ability to convert files into wsgi generators
 """
 
+import os
+import os.path
+import types
 from wsgiref.util import setup_testing_defaults
 
 from os_loganalyze.tests import base
@@ -35,7 +38,17 @@ def fake_env(**kwargs):
     return environ
 
 
-class TestWsgi(base.TestCase):
+def samples_path():
+    """ Create an abs path for our test samples
+
+    Because the wsgi has a security check that ensures that we don't
+    escape our root path, we need to actually create a full abs path
+    for the tests, otherwise the sample files aren't findable.
+    """
+    return os.path.join(os.getcwd(), 'os_loganalyze/tests/samples/')
+
+
+class TestWsgiBasic(base.TestCase):
 
     def test_invalid_file(self):
         gen = log_wsgi.application(fake_env(), _start_response)
@@ -45,3 +58,9 @@ class TestWsgi(base.TestCase):
         gen = log_wsgi.application(fake_env(PATH_INFO='/htmlify/foo.txt'),
                                    _start_response)
         self.assertEqual(gen, ['File Not Found'])
+
+    def test_found_file(self):
+        gen = log_wsgi.application(
+            fake_env(PATH_INFO='/htmlify/screen-c-api.txt.gz'),
+            _start_response, root_path=samples_path())
+        self.assertEqual(type(gen), types.GeneratorType)
