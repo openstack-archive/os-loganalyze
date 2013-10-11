@@ -24,7 +24,7 @@ import wsgiref.util
 
 
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{3})?'
-STATUSFMT = '(DEBUG|INFO|WARN|ERROR|TRACE|AUDIT)'
+STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
 LOGMATCH = '(?P<date>%s)(?P<pid> \d+)? (?P<status>%s)' % (DATEFMT, STATUSFMT)
 
 SEVS = {
@@ -33,7 +33,7 @@ SEVS = {
     'INFO': 2,
     'AUDIT': 3,
     'TRACE': 4,
-    'WARN': 5,
+    'WARNING': 5,
     'ERROR': 6
     }
 
@@ -52,7 +52,7 @@ a:hover {text-decoration: underline}
 .DEBUG, .DEBUG a {color: #888}
 .ERROR, .ERROR a {color: #c00; font-weight: bold}
 .TRACE, .TRACE a {color: #c60}
-.WARN, .WARN a {color: #D89100;  font-weight: bold}
+.WARNING, .WARNING a {color: #D89100;  font-weight: bold}
 .INFO, .INFO a {color: #006; font-weight: bold}
 .selector, .selector a {color: #888}
 .selector a:hover {color: #c00}
@@ -65,7 +65,7 @@ Display level: [
 <a href='?level=INFO'>INFO</a> |
 <a href='?level=AUDIT'>AUDIT</a> |
 <a href='?level=TRACE'>TRACE</a> |
-<a href='?level=WARN'>WARN</a> |
+<a href='?level=WARNING'>WARNING</a> |
 <a href='?level=ERROR'>ERROR</a> ]
 </span>
 <pre><span>""")
@@ -222,6 +222,7 @@ def should_be_html(environ):
 
 
 def get_min_sev(environ):
+    print environ.get('QUERY_STRING')
     parameters = cgi.parse_qs(environ.get('QUERY_STRING', ''))
     if 'level' in parameters:
         return cgi.escape(parameters['level'][0])

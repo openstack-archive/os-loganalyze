@@ -27,6 +27,19 @@ from os_loganalyze.tests import base
 import os_loganalyze.wsgi as log_wsgi
 
 
+SEVS = {
+    'NONE': 0,
+    'DEBUG': 1,
+    'INFO': 2,
+    'AUDIT': 3,
+    'TRACE': 4,
+    'WARNING': 5,
+    'ERROR': 6
+    }
+
+SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
+
+
 def _start_response(*args):
     return
 
@@ -85,3 +98,99 @@ class TestWsgiBasic(base.TestCase):
 
         first = gen.next()
         self.assertIn('<html>', first)
+
+
+class TestKnownFiles(base.TestCase):
+    files = {
+        'screen-c-api.txt.gz': {
+            'TOTAL': 3695,
+            'DEBUG': 2906,
+            'INFO': 486,
+            'AUDIT': 249,
+            'TRACE': 0,
+            'WARNING': 50,
+            'ERROR': 0,
+            },
+        'screen-key.txt.gz': {
+            'TOTAL': 144983
+            },
+        'screen-n-api.txt.gz': {
+            'TOTAL': 50745,
+            'DEBUG': 46071,
+            'INFO': 4388,
+            'AUDIT': 271,
+            'TRACE': 0,
+            'WARNING': 6,
+            'ERROR': 5
+            },
+        'screen-q-svc.txt.gz': {
+            'TOTAL': 47887,
+            'DEBUG': 46912,
+            'INFO': 262,
+            'AUDIT': 0,
+            'TRACE': 589,
+            'WARNING': 48,
+            'ERROR': 72,
+            }
+        }
+
+    def count_types(self, gen):
+        counts = {
+            'TOTAL': 0,
+            'DEBUG': 0,
+            'INFO': 0,
+            'WARNING': 0,
+            'ERROR': 0,
+            'TRACE': 0,
+            'AUDIT': 0}
+
+        laststatus = None
+        for line in gen:
+            counts['TOTAL'] = counts['TOTAL'] + 1
+            for key in counts:
+                if ' %s ' % key in line:
+                    laststatus = key
+                    continue
+            if laststatus:
+                counts[laststatus] = counts[laststatus] + 1
+        return counts
+
+    def compute_total(self, level, fname):
+        # todo, be more clever
+        counts = self.files[fname]
+        total = 0
+        for l in SEVS_SEQ[SEVS[level]:]:
+            # so that we don't need to know all the levels
+            if counts.get(l):
+                total = total + counts[l]
+        return total
+
+    def test_pass_through_all(self):
+        for fname in self.files:
+            gen = log_wsgi.application(
+                fake_env(
+                    PATH_INFO='/htmlify/%s' % fname,
+                    ),
+                _start_response, root_path=samples_path())
+
+            counts = self.count_types(gen)
+            self.assertEqual(counts['TOTAL'], self.files[fname]['TOTAL'])
+
+    def test_pass_through_at_levels(self):
+        for fname in self.files:
+            for level in self.files[fname]:
+                if level == 'TOTAL':
+                    continue
+
+                gen = log_wsgi.application(
+                    fake_env(
+                        PATH_INFO='/htmlify/%s' % fname,
+                        QUERY_STRING='level=%s' % level
+                        ),
+                    _start_response, root_path=samples_path())
+
+                counts = self.count_types(gen)
+                total = self.compute_total(level, fname)
+                print fname, counts
+
+                self.assertEqual(counts['TOTAL'], total)
