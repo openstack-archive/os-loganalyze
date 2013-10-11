@@ -189,12 +189,13 @@ def safe_path(root, environ):
     """
     path = wsgiref.util.request_uri(environ, include_query=0)
     match = re.search('htmlify/(.*)', path)
-    raw = match.groups(1)[0]
-    newpath = os.path.abspath(os.path.join(root, raw))
-    if newpath.find(root) == 0:
-        return newpath
-    else:
-        return None
+    if match:
+        raw = match.groups(1)[0]
+        newpath = os.path.abspath(os.path.join(root, raw))
+        if newpath.find(root) == 0:
+            return newpath
+
+    return None
 
 
 def should_be_html(environ):

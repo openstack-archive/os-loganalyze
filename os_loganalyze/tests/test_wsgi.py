@@ -18,6 +18,8 @@
 Test the ability to convert files into wsgi generators
 """
 
+from wsgiref.util import setup_testing_defaults
+
 from os_loganalyze.tests import base
 import os_loganalyze.wsgi as log_wsgi
 
@@ -26,15 +28,20 @@ def _start_response(*args):
     return
 
 
+def fake_env(**kwargs):
+    environ = dict(**kwargs)
+    setup_testing_defaults(environ)
+    print environ
+    return environ
+
+
 class TestWsgi(base.TestCase):
 
-    def test_nofile(self):
-        gen = log_wsgi.application(None, _start_response)
-        self.assertTrue(False)
+    def test_invalid_file(self):
+        gen = log_wsgi.application(fake_env(), _start_response)
         self.assertEqual(gen, ['Invalid file url'])
 
-        environ = {
-            'path': '/htmlify/foo.txt'
-            }
-        gen = log_wsgi.application(environ, _start_response)
-        self.assertEqual(gen, ['Invalid file url1'])
+    def test_file_not_found(self):
+        gen = log_wsgi.application(fake_env(PATH_INFO='/htmlify/foo.txt'),
+                                   _start_response)
+        self.assertEqual(gen, ['File Not Found'])
