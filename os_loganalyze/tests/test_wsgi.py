@@ -64,3 +64,24 @@ class TestWsgiBasic(base.TestCase):
             fake_env(PATH_INFO='/htmlify/screen-c-api.txt.gz'),
             _start_response, root_path=samples_path())
         self.assertEqual(type(gen), types.GeneratorType)
+
+    def test_plain_text(self):
+        gen = log_wsgi.application(
+            fake_env(PATH_INFO='/htmlify/screen-c-api.txt.gz'),
+            _start_response, root_path=samples_path())
+
+        first = gen.next()
+        self.assertIn(
+            '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
+            first)
+
+    def test_html_gen(self):
+        gen = log_wsgi.application(
+            fake_env(
+                PATH_INFO='/htmlify/screen-c-api.txt.gz',
+                HTTP_ACCEPT='text/html'
+                ),
+            _start_response, root_path=samples_path())
+
+        first = gen.next()
+        self.assertIn('<html>', first)
