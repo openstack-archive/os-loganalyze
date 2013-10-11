@@ -169,11 +169,12 @@ def html_filter(fname, minsev):
 
 
 def htmlify_stdin():
+    minsev = "NONE"
     out = sys.stdout
     out.write(_css_preamble())
     for line in fileinput.FileInput():
         newline = escape_html(line)
-        newline = color_by_sev(newline)
+        newline = color_by_sev(newline, minsev)
         newline = link_timestamp(newline)
         out.write(newline)
     out.write(_html_close())
