@@ -52,7 +52,7 @@ def fake_env(**kwargs):
 
 
 def samples_path():
-    """ Create an abs path for our test samples
+    """Create an abs path for our test samples
 
     Because the wsgi has a security check that ensures that we don't
     escape our root path, we need to actually create a full abs path
