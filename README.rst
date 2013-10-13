@@ -32,10 +32,6 @@ Todo
 ------------
 Next steps, roughly in order
 
-* support keystone logs
-* support devstack console logs
-* support swift logs
-* bail out early if we find a log we don't understand (filtering by
-  name is probably appropriate to begin with)
+* support swift logs (timestamp linking only, no sevs in swift logs)
 * provide links to logstash for request streams (link well know
   request ids to logstash queries for them)

@@ -22,6 +22,8 @@ import re
 import sys
 import wsgiref.util
 
+# which logs support severity
+SUPPORTS_SEV = '(screen-(n-|c-|q-|g-|h-|ceil|key))'
 
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
@@ -31,6 +33,7 @@ OSLO_LOGMATCH = '^(?P<date>%s)(?P<pid> \d+)? (?P<status>%s)' % \
     (DATEFMT, STATUSFMT)
 KEY_LOGMATCH = '^(?P<comp>%s) (?P<date>%s) (?P<status>%s)' % \
     (KEY_COMPONENT, DATEFMT, STATUSFMT)
+
 
 SEVS = {
     'NONE': 0,
@@ -76,6 +79,11 @@ Display level: [
 <pre><span>""")
 
 
+def file_supports_sev(fname):
+    m = re.search(SUPPORTS_SEV, fname)
+    return m is not None
+
+
 def sev_of_line(line, oldsev="NONE"):
     m = re.match(OSLO_LOGMATCH, line)
     if m:
@@ -111,12 +119,19 @@ def link_timestamp(line):
     if m:
         date = "_" + re.sub('[\s\:\.\,]', '_', m.group('date'))
 
-        return "</span><span class='%s %s'>%s<a name='%s' class='date'" \
-            " href='#%s'>%s</a>%s\n" % (
-            m.group('class'), date, m.group('comp'), date, date,
-            m.group('date'), m.group('rest'))
-    else:
-        return line
+        # everyone that got this far had a date
+        line = "<a name='%s' class='date' href='#%s'>%s</a>%s\n" % (
+            date, date, m.group('date'), m.group('rest'))
+        # if we found a keystone component, add it back
+        if m.group('comp'):
+            line = ("%s" % m.group('comp')) + line
+
+        # if we found a severity class, put the spans back
+        if m.group('class'):
+            line = "</span><span class='%s %s'>%s" % (
+                m.group('class'), date, line)
+
+    return line
 
 
 def skip_line_by_sev(sev, minsev):
@@ -130,11 +145,14 @@ def skip_line_by_sev(sev, minsev):
 
 def passthrough_filter(fname, minsev):
     sev = "NONE"
-    for line in fileinput.FileInput(fname, openhook=fileinput.hook_compressed):
-        sev = sev_of_line(line, sev)
+    supports_sev = file_supports_sev(fname)
 
-        if skip_line_by_sev(sev, minsev):
-            continue
+    for line in fileinput.FileInput(fname, openhook=fileinput.hook_compressed):
+        if supports_sev:
+            sev = sev_of_line(line, sev)
+
+            if skip_line_by_sev(sev, minsev):
+                continue
 
         yield line
 
@@ -166,12 +184,17 @@ def html_filter(fname, minsev):
 
     yield _css_preamble()
     sev = "NONE"
+    supports_sev = file_supports_sev(fname)
+
     for line in fileinput.FileInput(fname, openhook=fileinput.hook_compressed):
         newline = escape_html(line)
-        sev = sev_of_line(newline, sev)
-        if skip_line_by_sev(sev, minsev):
-            continue
-        newline = color_by_sev(newline, sev)
+
+        if supports_sev:
+            sev = sev_of_line(newline, sev)
+            if skip_line_by_sev(sev, minsev):
+                continue
+            newline = color_by_sev(newline, sev)
+
         newline = link_timestamp(newline)
         yield newline
     yield _html_close()

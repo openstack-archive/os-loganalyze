@@ -53,3 +53,21 @@ class TestFilters(base.TestCase):
         line = gen.next()
         self.assertIn("class='DEBUG", line)
         self.assertIn("href='#_2013-09-27_18_20_55_636'", line)
+
+    def test_devstack_filters(self):
+        gen = self.get_generator('devstacklog.txt.gz')
+        # dump the header
+        gen.next()
+
+        # first line
+        line = gen.next()
+        self.assertIn("href='#_2013-09-27_18_15_31'", line)
+
+    def test_devstack_filters_nodrop(self):
+        gen = self.get_generator('devstacklog.txt.gz', level='INFO')
+        # dump the header
+        gen.next()
+
+        # we shouldn't be dropping anything with the first line
+        line = gen.next()
+        self.assertIn("href='#_2013-09-27_18_15_31'", line)
