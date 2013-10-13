@@ -77,7 +77,15 @@ class TestKnownFiles(base.TestCase):
             'ERROR': 0,
             },
         'screen-key.txt.gz': {
-            'TOTAL': 144983
+            'TOTAL': 144983,
+            'DEBUG': 129842,
+            # there is curiousness in the fact that keystone logs have a lot
+            # of blank lines, so INFO is higher than you think it should be
+            'INFO': 15131,
+            'AUDIT': 0,
+            'WARNING': 6,
+            'TRACE': 0,
+            'ERROR': 0
             },
         'screen-n-api.txt.gz': {
             'TOTAL': 50745,

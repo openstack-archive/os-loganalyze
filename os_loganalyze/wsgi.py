@@ -23,9 +23,14 @@ import sys
 import wsgiref.util
 
 
-DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d{3})?'
+DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
-LOGMATCH = '(?P<date>%s)(?P<pid> \d+)? (?P<status>%s)' % (DATEFMT, STATUSFMT)
+KEY_COMPONENT = '\([^\)]+\):'
+
+OSLO_LOGMATCH = '^(?P<date>%s)(?P<pid> \d+)? (?P<status>%s)' % \
+    (DATEFMT, STATUSFMT)
+KEY_LOGMATCH = '^(?P<comp>%s) (?P<date>%s) (?P<status>%s)' % \
+    (KEY_COMPONENT, DATEFMT, STATUSFMT)
 
 SEVS = {
     'NONE': 0,
@@ -72,11 +77,15 @@ Display level: [
 
 
 def sev_of_line(line, oldsev="NONE"):
-    m = re.match(LOGMATCH, line)
+    m = re.match(OSLO_LOGMATCH, line)
     if m:
         return m.group('status')
-    else:
-        return oldsev
+
+    m = re.match(KEY_LOGMATCH, line)
+    if m:
+        return m.group('status')
+
+    return oldsev
 
 
 def color_by_sev(line, sev):
@@ -96,15 +105,15 @@ def escape_html(line):
 
 def link_timestamp(line):
     m = re.match(
-        '(<span class=\'(?P<class>[^\']+)\'>)?(?P<date>%s)(?P<rest>.*)' %
-        DATEFMT,
+        '(<span class=\'(?P<class>[^\']+)\'>)?(?P<comp>%s )?'
+        '(?P<date>%s)(?P<rest>.*)' % (KEY_COMPONENT, DATEFMT),
         line)
     if m:
-        date = "_" + re.sub('[\s\:\.]', '_', m.group('date'))
+        date = "_" + re.sub('[\s\:\.\,]', '_', m.group('date'))
 
-        return "</span><span class='%s %s'><a name='%s' class='date'" \
+        return "</span><span class='%s %s'>%s<a name='%s' class='date'" \
             " href='#%s'>%s</a>%s\n" % (
-            m.group('class'), date, date, date,
+            m.group('class'), date, m.group('comp'), date, date,
             m.group('date'), m.group('rest'))
     else:
         return line

@@ -43,3 +43,13 @@ class TestFilters(base.TestCase):
         line = gen.next()
         self.assertIn("class='DEBUG", line)
         self.assertIn("href='#_2013-09-27_18_22_11_249'", line)
+
+    def test_keystone_filters(self):
+        gen = self.get_generator('screen-key.txt.gz', level='DEBUG')
+        # we don't need the header, we just don't want to deal with it
+        gen.next()
+
+        # first line is INFO
+        line = gen.next()
+        self.assertIn("class='DEBUG", line)
+        self.assertIn("href='#_2013-09-27_18_20_55_636'", line)
