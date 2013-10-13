@@ -18,10 +18,7 @@
 Test the ability to convert files into wsgi generators
 """
 
-import os
-import os.path
 import types
-from wsgiref.util import setup_testing_defaults
 
 from os_loganalyze.tests import base
 import os_loganalyze.wsgi as log_wsgi
@@ -40,48 +37,22 @@ SEVS = {
 SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
 
 
-def _start_response(*args):
-    return
-
-
-def fake_env(**kwargs):
-    environ = dict(**kwargs)
-    setup_testing_defaults(environ)
-    print environ
-    return environ
-
-
-def samples_path():
-    """Create an abs path for our test samples
-
-    Because the wsgi has a security check that ensures that we don't
-    escape our root path, we need to actually create a full abs path
-    for the tests, otherwise the sample files aren't findable.
-    """
-    return os.path.join(os.getcwd(), 'os_loganalyze/tests/samples/')
-
-
 class TestWsgiBasic(base.TestCase):
 
     def test_invalid_file(self):
-        gen = log_wsgi.application(fake_env(), _start_response)
+        gen = log_wsgi.application(
+            self.fake_env(), self._start_response)
         self.assertEqual(gen, ['Invalid file url'])
 
     def test_file_not_found(self):
-        gen = log_wsgi.application(fake_env(PATH_INFO='/htmlify/foo.txt'),
-                                   _start_response)
+        gen = log_wsgi.application(
+            self.fake_env(PATH_INFO='/htmlify/foo.txt'),
+            self._start_response)
         self.assertEqual(gen, ['File Not Found'])
 
-    def test_found_file(self):
-        gen = log_wsgi.application(
-            fake_env(PATH_INFO='/htmlify/screen-c-api.txt.gz'),
-            _start_response, root_path=samples_path())
-        self.assertEqual(type(gen), types.GeneratorType)
-
     def test_plain_text(self):
-        gen = log_wsgi.application(
-            fake_env(PATH_INFO='/htmlify/screen-c-api.txt.gz'),
-            _start_response, root_path=samples_path())
+        gen = self.get_generator('screen-c-api.txt.gz', html=False)
+        self.assertEqual(type(gen), types.GeneratorType)
 
         first = gen.next()
         self.assertIn(
@@ -89,13 +60,7 @@ class TestWsgiBasic(base.TestCase):
             first)
 
     def test_html_gen(self):
-        gen = log_wsgi.application(
-            fake_env(
-                PATH_INFO='/htmlify/screen-c-api.txt.gz',
-                HTTP_ACCEPT='text/html'
-                ),
-            _start_response, root_path=samples_path())
-
+        gen = self.get_generator('screen-c-api.txt.gz')
         first = gen.next()
         self.assertIn('<html>', first)
 
@@ -167,11 +132,7 @@ class TestKnownFiles(base.TestCase):
 
     def test_pass_through_all(self):
         for fname in self.files:
-            gen = log_wsgi.application(
-                fake_env(
-                    PATH_INFO='/htmlify/%s' % fname,
-                    ),
-                _start_response, root_path=samples_path())
+            gen = self.get_generator(fname, html=False)
 
             counts = self.count_types(gen)
             self.assertEqual(counts['TOTAL'], self.files[fname]['TOTAL'])
@@ -182,12 +143,7 @@ class TestKnownFiles(base.TestCase):
                 if level == 'TOTAL':
                     continue
 
-                gen = log_wsgi.application(
-                    fake_env(
-                        PATH_INFO='/htmlify/%s' % fname,
-                        QUERY_STRING='level=%s' % level
-                        ),
-                    _start_response, root_path=samples_path())
+                gen = self.get_generator(fname, level=level, html=False)
 
                 counts = self.count_types(gen)
                 total = self.compute_total(level, fname)

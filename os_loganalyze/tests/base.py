@@ -16,11 +16,26 @@
 # under the License.
 
 import os
+import os.path
+from wsgiref.util import setup_testing_defaults
 
 import fixtures
 import testtools
 
+import os_loganalyze.wsgi as log_wsgi
+
+
 _TRUE_VALUES = ('true', '1', 'yes')
+
+
+def samples_path():
+    """Create an abs path for our test samples
+
+    Because the wsgi has a security check that ensures that we don't
+    escape our root path, we need to actually create a full abs path
+    for the tests, otherwise the sample files aren't findable.
+    """
+    return os.path.join(os.getcwd(), 'os_loganalyze/tests/samples/')
 
 
 class TestCase(testtools.TestCase):
@@ -51,3 +66,27 @@ class TestCase(testtools.TestCase):
             self.useFixture(fixtures.MonkeyPatch('sys.stderr', stderr))
 
         self.log_fixture = self.useFixture(fixtures.FakeLogger())
+
+    def _start_response(self, *args):
+        return
+
+    def fake_env(self, **kwargs):
+        environ = dict(**kwargs)
+        setup_testing_defaults(environ)
+        return environ
+
+    def get_generator(self, fname, level=None, html=True):
+        kwargs = {'PATH_INFO': '/htmlify/%s' % fname}
+
+        if level:
+            kwargs['QUERY_STRING'] = 'level=%s' % level
+
+        if html:
+            kwargs['HTTP_ACCEPT'] = 'text/html'
+
+        gen = log_wsgi.application(
+            self.fake_env(**kwargs),
+            self._start_response,
+            root_path=samples_path())
+
+        return gen
