@@ -49,7 +49,7 @@ class TestFilters(base.TestCase):
         # we don't need the header, we just don't want to deal with it
         gen.next()
 
-        # first line is INFO
+        # first line is DEBUG
         line = gen.next()
         self.assertIn("class='DEBUG", line)
         self.assertIn("href='#_2013-09-27_18_20_55_636'", line)
