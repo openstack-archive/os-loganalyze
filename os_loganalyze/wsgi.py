@@ -84,6 +84,10 @@ def file_supports_sev(fname):
     return m is not None
 
 
+def not_html(fname):
+    return re.search('(\.html(\.gz)?)$', fname) is None
+
+
 def sev_of_line(line, oldsev="NONE"):
     m = re.match(OSLO_LOGMATCH, line)
     if m:
@@ -185,9 +189,13 @@ def html_filter(fname, minsev):
     yield _css_preamble()
     sev = "NONE"
     supports_sev = file_supports_sev(fname)
+    should_escape = not_html(fname)
 
     for line in fileinput.FileInput(fname, openhook=fileinput.hook_compressed):
-        newline = escape_html(line)
+        if should_escape:
+            newline = escape_html(line)
+        else:
+            newline = line
 
         if supports_sev:
             sev = sev_of_line(newline, sev)

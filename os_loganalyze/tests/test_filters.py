@@ -71,3 +71,21 @@ class TestFilters(base.TestCase):
         # we shouldn't be dropping anything with the first line
         line = gen.next()
         self.assertIn("href='#_2013-09-27_18_15_31'", line)
+
+    def test_html_file_filters(self):
+        # do we avoid double escaping html files
+        gen = self.get_generator('console.html.gz')
+        # dump the header
+        gen.next()
+
+        # we shouldn't be dropping anything with the first line
+        line = gen.next()
+        self.assertEqual("<pre>\n", line)
+
+        line = gen.next()
+        self.assertIn("<a name='_2013-09-27_18_07_11_860' "
+                      "class='date' href='#_2013-09-27_18_07_11_860'>", line)
+
+        line = gen.next()
+        self.assertIn("<a name='_2013-09-27_18_07_11_884' "
+                      "class='date' href='#_2013-09-27_18_07_11_884'>", line)
