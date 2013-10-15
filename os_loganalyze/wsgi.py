@@ -50,9 +50,9 @@ def _html_close():
     return ("</span></pre></body></html>\n")
 
 
-def _css_preamble():
+def _css_preamble(supports_sev):
     """Write a valid html start with css that we need."""
-    return ("""<html>
+    header = """<html>
 <head>
 <style>
 a {color: #000; text-decoration: none}
@@ -65,7 +65,9 @@ a:hover {text-decoration: underline}
 .selector, .selector a {color: #888}
 .selector a:hover {color: #c00}
 </style>
-<body>
+<body>"""
+    if supports_sev:
+        header = header + """
 <span class='selector'>
 Display level: [
 <a href='?'>ALL</a> |
@@ -75,8 +77,10 @@ Display level: [
 <a href='?level=TRACE'>TRACE</a> |
 <a href='?level=WARNING'>WARNING</a> |
 <a href='?level=ERROR'>ERROR</a> ]
-</span>
-<pre><span>""")
+</span>"""
+
+    header = header + "<pre><span>"
+    return header
 
 
 def file_supports_sev(fname):
@@ -186,10 +190,11 @@ def html_filter(fname, minsev):
     data quickly to the user, and use minimal memory in the process.
     """
 
-    yield _css_preamble()
-    sev = "NONE"
     supports_sev = file_supports_sev(fname)
+    sev = "NONE"
     should_escape = not_html(fname)
+
+    yield _css_preamble(supports_sev)
 
     for line in fileinput.FileInput(fname, openhook=fileinput.hook_compressed):
         if should_escape:

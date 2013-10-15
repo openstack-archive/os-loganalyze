@@ -27,7 +27,8 @@ class TestFilters(base.TestCase):
     def test_consolodated_filters(self):
         gen = self.get_generator('screen-q-svc.txt.gz', level='DEBUG')
         # we don't need the header, we just don't want to deal with it
-        gen.next()
+        header = gen.next()
+        self.assertIn("Display level: ", header)
 
         # first line is INFO
         line = gen.next()
@@ -65,8 +66,9 @@ class TestFilters(base.TestCase):
 
     def test_devstack_filters_nodrop(self):
         gen = self.get_generator('devstacklog.txt.gz', level='INFO')
-        # dump the header
-        gen.next()
+
+        header = gen.next()
+        self.assertNotIn("Display level: ", header)
 
         # we shouldn't be dropping anything with the first line
         line = gen.next()
@@ -75,8 +77,9 @@ class TestFilters(base.TestCase):
     def test_html_file_filters(self):
         # do we avoid double escaping html files
         gen = self.get_generator('console.html.gz')
-        # dump the header
-        gen.next()
+
+        header = gen.next()
+        self.assertNotIn("Display level: ", header)
 
         # we shouldn't be dropping anything with the first line
         line = gen.next()
