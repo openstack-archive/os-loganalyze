@@ -15,7 +15,7 @@ generator so that it can act like a pipeline. Some of our logs are 35
 MB uncompressed, so if we used a more advanced framework that required
 we load the entire data stream into memory, the user response would be
 very poor. As a pipeline and generator the delay added by this script
-to the user grabbing the logs is largely not noticable (< 1s).
+to the user grabbing the logs is largely not noticeable (< 1s).
 
 * Free software: Apache license
 * Documentation: http://docs.openstack.org/developer/os_loganalyze
