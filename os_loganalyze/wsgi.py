@@ -275,7 +275,15 @@ def get_min_sev(environ):
         return "NONE"
 
 
-def application(environ, start_response, root_path='/srv/static/logs/'):
+def application(environ, start_response, root_path=None):
+    if root_path is None:
+        root_path = os.environ.get('OS_LOGANALYZE_ROOT_PATH',
+                                   '/srv/static/logs')
+
+    # make root path absolute in case we have a path with local components
+    # specified
+    root_path = os.path.abspath(root_path)
+
     status = '200 OK'
 
     logpath = safe_path(root_path, environ)
