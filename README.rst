@@ -27,6 +27,11 @@ Features
 * html highlighting based on severity
 * filtering based on severity using the level=XXXX parameter (works in
   either text/html or text/plain responses
+* Provides a script named htmlify_server.py that serves htmlified logs
+  over HTTP. To view devstack logs: set
+  SCREEN_LOGDIR=$DEST/logs/screen and LOG_COLOR=false in localrc
+  before running stack.sh, run htmlify_server.py, and point your
+  browser at http://devstack-ip:8000/
 
 Todo
 ------------
