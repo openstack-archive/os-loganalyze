@@ -24,7 +24,7 @@ from os_loganalyze.tests import base
 
 class TestFilters(base.TestCase):
 
-    def test_consolodated_filters(self):
+    def test_consolidated_filters(self):
         gen = self.get_generator('screen-q-svc.txt.gz', level='DEBUG')
         # we don't need the header, we just don't want to deal with it
         header = gen.next()
