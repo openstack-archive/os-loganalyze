@@ -20,6 +20,7 @@ import os.path
 from wsgiref.util import setup_testing_defaults
 
 import fixtures
+import swiftclient
 import testtools
 
 import os_loganalyze.wsgi as log_wsgi
@@ -28,14 +29,16 @@ import os_loganalyze.wsgi as log_wsgi
 _TRUE_VALUES = ('true', '1', 'yes')
 
 
-def samples_path():
+def samples_path(append_folder='samples'):
     """Create an abs path for our test samples
 
     Because the wsgi has a security check that ensures that we don't
     escape our root path, we need to actually create a full abs path
     for the tests, otherwise the sample files aren't findable.
     """
-    return os.path.join(os.getcwd(), 'os_loganalyze/tests/samples/')
+    return (os.path.normpath(
+        os.path.join(os.getcwd(), 'os_loganalyze/tests', append_folder)) +
+        os.sep)
 
 
 class TestCase(testtools.TestCase):
@@ -66,6 +69,8 @@ class TestCase(testtools.TestCase):
             self.useFixture(fixtures.MonkeyPatch('sys.stderr', stderr))
 
         self.log_fixture = self.useFixture(fixtures.FakeLogger())
+        self.samples_directory = 'samples'
+        self.wsgi_config_file = samples_path('samples') + 'wsgi.conf'
 
     def _start_response(self, *args):
         return
@@ -87,6 +92,37 @@ class TestCase(testtools.TestCase):
         gen = log_wsgi.application(
             self.fake_env(**kwargs),
             self._start_response,
-            root_path=samples_path())
+            root_path=samples_path(self.samples_directory),
+            wsgi_config=self.wsgi_config_file)
 
         return gen
+
+
+class TestSwiftFiles(TestCase):
+
+    """Test case with fake swift object."""
+
+    def setUp(self):
+        def fake_get_object(self, container, name, resp_chunk_size=None):
+            if resp_chunk_size:
+
+                def _object_body():
+                    with open(samples_path('samples') + name) as f:
+
+                        buf = f.read(resp_chunk_size)
+                        while buf:
+                            yield buf
+                            buf = f.read(resp_chunk_size)
+
+                object_body = _object_body()
+            else:
+                with open(samples_path('samples') + name) as f:
+                    object_body = f.read()
+            return [], object_body
+
+        swiftclient.client.Connection.get_object = fake_get_object
+        super(TestSwiftFiles, self).setUp()
+
+        # Set the samples directory to somewhere non-existent so that swift
+        # is checked for files
+        self.samples_directory = 'non-existent'

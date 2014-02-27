@@ -31,6 +31,7 @@ import wsgiref.simple_server
 
 DEF_PORT = 8000
 LOG_PATH = '/opt/stack/logs/screen/'
+WSGI_CONFIG = '/etc/os_loganalyze/wsgi.conf'
 
 
 def parse_args():
@@ -44,8 +45,11 @@ def parse_args():
     parser.add_argument('--logdir', '-l', default=LOG_PATH,
                         help='Path to the log files to be served')
 
+    parser.add_argument('--wsgi-config', '-c', default=WSGI_CONFIG,
+                        help="Specify the WSGI configuration file")
+
     args = parser.parse_args()
-    return (args.port, args.logdir)
+    return (args.port, args.logdir, args.wsgi_config)
 
 
 def top_wsgi_app(environ, start_response):
@@ -53,7 +57,8 @@ def top_wsgi_app(environ, start_response):
     if bool(re.search('^/$|^/htmlify/?$', req_path)):
         return gen_links_wsgi_app(environ, start_response)
     else:
-        return application(environ, start_response, root_path=LOG_PATH)
+        return application(environ, start_response, root_path=LOG_PATH,
+                           wsgi_config=WSGI_CONFIG)
 
 
 def gen_links_wsgi_app(environ, start_response):
@@ -92,8 +97,8 @@ def my_ip():
 
 
 def main():
-    global LOG_PATH
-    port, LOG_PATH = parse_args()
+    global LOG_PATH, WSGI_CONFIG
+    port, LOG_PATH, WSGI_CONFIG = parse_args()
 
     if not os.path.isdir(LOG_PATH):
         print "%s is not a directory. Quiting..." % LOG_PATH

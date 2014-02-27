@@ -37,8 +37,7 @@ SEVS = {
 SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
 
 
-class TestWsgiBasic(base.TestCase):
-
+class BasicTestsMixin(object):
     def test_invalid_file(self):
         gen = log_wsgi.application(
             self.fake_env(), self._start_response)
@@ -64,8 +63,17 @@ class TestWsgiBasic(base.TestCase):
         first = gen.next()
         self.assertIn('<html>', first)
 
+    def test_plain_non_compressed(self):
+        gen = self.get_generator('screen-c-api.txt', html=False)
+        self.assertEqual(type(gen), types.GeneratorType)
 
-class TestKnownFiles(base.TestCase):
+        first = gen.next()
+        self.assertIn(
+            '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
+            first)
+
+
+class KnownFilesMixin(object):
     files = {
         'screen-c-api.txt.gz': {
             'TOTAL': 3695,
@@ -158,3 +166,70 @@ class TestKnownFiles(base.TestCase):
                 print fname, counts
 
                 self.assertEqual(counts['TOTAL'], total)
+
+
+class TestWsgiDisk(base.TestCase, BasicTestsMixin, KnownFilesMixin):
+    """Test loading files from samples on disk."""
+    pass
+
+
+class TestWsgiSwift(base.TestSwiftFiles, BasicTestsMixin, KnownFilesMixin):
+    """Test loading files from swift."""
+
+    def test_compare_disk_to_swift_html(self):
+        """Compare loading logs from disk vs swift."""
+        # Load from disk
+        self.samples_directory = 'samples'
+        gen = self.get_generator('screen-c-api.txt.gz')
+        result_disk = ''
+        for line in gen:
+            result_disk += line
+
+        self.samples_directory = 'non-existent'
+        gen = self.get_generator('screen-c-api.txt.gz')
+        result_swift = ''
+        for line in gen:
+            result_swift += line
+
+        self.assertEqual(result_disk, result_swift)
+
+    def test_compare_disk_to_swift_plain(self):
+        """Compare loading logs from disk vs swift."""
+        # Load from disk
+        self.samples_directory = 'samples'
+        gen = self.get_generator('screen-key.txt.gz', html=False)
+        result_disk = ''
+        for line in gen:
+            result_disk += line
+
+        self.samples_directory = 'non-existent'
+        gen = self.get_generator('screen-key.txt.gz', html=False)
+        result_swift = ''
+        for line in gen:
+            result_swift += line
+
+        self.assertEqual(result_disk, result_swift)
+
+    def test_compare_disk_to_swift_no_compression(self):
+        """Compare loading logs from disk vs swift."""
+        # Load from disk
+        self.samples_directory = 'samples'
+        gen = self.get_generator('screen-c-api.txt')
+        result_disk = ''
+        for line in gen:
+            result_disk += line
+
+        self.samples_directory = 'non-existent'
+        gen = self.get_generator('screen-c-api.txt')
+        result_swift = ''
+        for line in gen:
+            result_swift += line
+
+        self.assertEqual(result_disk, result_swift)
+
+    def test_compare_disk_to_swift_no_chunks(self):
+        self.wsgi_config_file = (base.samples_path('samples') +
+                                 'wsgi_no_chunks.conf')
+        self.test_compare_disk_to_swift_no_compression()
+        self.test_compare_disk_to_swift_plain()
+        self.test_compare_disk_to_swift_html()
