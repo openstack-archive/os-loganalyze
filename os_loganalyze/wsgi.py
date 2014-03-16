@@ -47,7 +47,16 @@ SEVS = {
 
 
 def _html_close():
-    return ("</span></pre></body></html>\n")
+    return """
+</span></pre></body>
+<script>
+var highlight = window.location.hash.substr(1);
+if (highlight) {
+    document.getElementById(highlight).className += " highlight";
+}
+</script>
+</html>
+"""
 
 
 def _css_preamble(supports_sev):
@@ -64,6 +73,7 @@ a:hover {text-decoration: underline}
 .INFO, .INFO a {color: #006; font-weight: bold}
 .selector, .selector a {color: #888}
 .selector a:hover {color: #c00}
+.highlight {background-color: rgb(255, 255, 204);}
 </style>
 <body>"""
     if supports_sev:
