@@ -52,7 +52,10 @@ def _html_close():
 <script>
 var highlight = window.location.hash.substr(1);
 if (highlight) {
-    document.getElementById(highlight).className += " highlight";
+    elements = document.getElementsByClassName(highlight);
+    for (var i = 0; i < elements.length; i++) {
+        elements[i].className += " highlight";
+    }
 }
 </script>
 </html>
@@ -73,7 +76,7 @@ a:hover {text-decoration: underline}
 .INFO, .INFO a {color: #006; font-weight: bold}
 .selector, .selector a {color: #888}
 .selector a:hover {color: #c00}
-.highlight {background-color: rgb(255, 255, 204);}
+.highlight {background-color: rgb(255, 255, 204); display: block}
 </style>
 <body>"""
     if supports_sev:
