@@ -106,6 +106,13 @@ a:hover {text-decoration: underline}
 #selector, #selector a {color: #888}
 #selector a:hover {color: #c00}
 .highlight {background-color: rgb(255, 255, 204); display: block}
+pre span span {margin-left: 0}
+pre span {
+    margin-left: 22em;
+    text-indent: -22em;
+    white-space: pre-wrap;
+    display: block;
+}
 </style>
 <body>"""
     if supports_sev:
@@ -249,6 +256,8 @@ def html_filter(fname, minsev):
             if skip_line_by_sev(sev, minsev):
                 continue
             newline = color_by_sev(newline, sev)
+        else:
+            newline = "<span class='line'>" + newline + '</span>'
 
         newline = link_timestamp(newline)
         yield newline

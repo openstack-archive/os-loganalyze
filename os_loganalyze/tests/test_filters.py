@@ -83,7 +83,7 @@ class TestFilters(base.TestCase):
 
         # we shouldn't be dropping anything with the first line
         line = gen.next()
-        self.assertEqual("<pre>\n", line)
+        self.assertEqual("<span class='line'><pre>\n</span>", line)
 
         line = gen.next()
         self.assertIn("<a name='_2013-09-27_18_07_11_860' "
