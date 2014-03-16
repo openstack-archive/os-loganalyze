@@ -50,13 +50,34 @@ def _html_close():
     return """
 </span></pre></body>
 <script>
-var highlight = window.location.hash.substr(1);
-if (highlight) {
-    elements = document.getElementsByClassName(highlight);
-    for (var i = 0; i < elements.length; i++) {
-        elements[i].className += " highlight";
+var old_highlight;
+
+function remove_highlight() {
+    if (old_highlight) {
+        items = document.getElementsByClassName(old_highlight);
+        for (var i = 0; i < items.length; i++) {
+            items[i].className = items[i].className.replace('highlight','');
+        }
     }
 }
+
+function highlight_by_hash(event) {
+    var highlight = window.location.hash.substr(1);
+    // handle changes to highlighting separate from reload
+    if (event) {
+         highlight = event.target.hash.substr(1);
+    }
+    remove_highlight();
+    if (highlight) {
+        elements = document.getElementsByClassName(highlight);
+        for (var i = 0; i < elements.length; i++) {
+            elements[i].className += " highlight";
+        }
+        old_highlight = highlight;
+    }
+}
+document.onclick = highlight_by_hash;
+highlight_by_hash();
 </script>
 </html>
 """
