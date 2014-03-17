@@ -62,7 +62,7 @@ class TestFilters(base.TestCase):
 
         # first line
         line = gen.next()
-        self.assertIn("href='#_2013-09-27_18_15_31'", line)
+        self.assertIn("href='#_2014-03-17_16_11_24_173'", line)
 
     def test_devstack_filters_nodrop(self):
         gen = self.get_generator('devstacklog.txt.gz', level='INFO')
@@ -72,7 +72,7 @@ class TestFilters(base.TestCase):
 
         # we shouldn't be dropping anything with the first line
         line = gen.next()
-        self.assertIn("href='#_2013-09-27_18_15_31'", line)
+        self.assertIn("href='#_2014-03-17_16_11_24_173'", line)
 
     def test_html_file_filters(self):
         # do we avoid double escaping html files
