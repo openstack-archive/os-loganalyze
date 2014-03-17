@@ -17,8 +17,7 @@ we load the entire data stream into memory, the user response would be
 very poor. As a pipeline and generator the delay added by this script
 to the user grabbing the logs is largely not noticeable (< 1s).
 
-* Free software: Apache license
-* Documentation: http://docs.openstack.org/developer/os_loganalyze
+* Free software: Apache 2.0 license
 
 Features
 --------
@@ -27,6 +26,7 @@ Features
 * html highlighting based on severity
 * filtering based on severity using the level=XXXX parameter (works in
   either text/html or text/plain responses
+* linking and highlighting of lines based on timestamp
 * Provides a script named htmlify_server.py that serves htmlified logs
   over HTTP. To view devstack logs: set
   SCREEN_LOGDIR=$DEST/logs/screen and LOG_COLOR=false in localrc
