@@ -61,6 +61,13 @@ function remove_highlight() {
     }
 }
 
+function update_selector(highlight) {
+    var links = document.getElementById('selector').getElementsByTagName('a');
+    for (var i = 0; i < links.length; i++) {
+        links[i].hash = "#" + highlight;
+    }
+}
+
 function highlight_by_hash(event) {
     var highlight = window.location.hash.substr(1);
     // handle changes to highlighting separate from reload
@@ -73,6 +80,7 @@ function highlight_by_hash(event) {
         for (var i = 0; i < elements.length; i++) {
             elements[i].className += " highlight";
         }
+        update_selector(highlight);
         old_highlight = highlight;
     }
 }
@@ -95,14 +103,14 @@ a:hover {text-decoration: underline}
 .TRACE, .TRACE a {color: #c60}
 .WARNING, .WARNING a {color: #D89100;  font-weight: bold}
 .INFO, .INFO a {color: #006; font-weight: bold}
-.selector, .selector a {color: #888}
-.selector a:hover {color: #c00}
+#selector, #selector a {color: #888}
+#selector a:hover {color: #c00}
 .highlight {background-color: rgb(255, 255, 204); display: block}
 </style>
 <body>"""
     if supports_sev:
         header = header + """
-<span class='selector'>
+<span id='selector'>
 Display level: [
 <a href='?'>ALL</a> |
 <a href='?level=DEBUG'>DEBUG</a> |
