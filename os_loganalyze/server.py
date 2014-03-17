@@ -24,6 +24,7 @@ import argparse
 import os
 from os_loganalyze.wsgi import application
 import re
+import socket
 import sys
 import wsgiref.simple_server
 
@@ -73,7 +74,9 @@ def link_generator(all_files):
     else:
         yield ("Showing current log files in %s. "
                "<a href='/?all'>Show all files</a>\n" % LOG_PATH)
-        filenames = [f for f in filenames if f.endswith('.log')]
+
+        filenames = [f for f in filenames if
+                     re.search('\.(log|txt\.gz|html.gz)$', f)]
         # also exclude files with datestamps in their name
         filenames = [f for f in filenames
                      if not re.search('\d{4}-\d{2}-\d{2}', f)]
@@ -84,6 +87,10 @@ def link_generator(all_files):
     yield '</body></html>\n'
 
 
+def my_ip():
+    return socket.gethostbyname(socket.gethostname())
+
+
 def main():
     global LOG_PATH
     port, LOG_PATH = parse_args()
@@ -92,9 +99,10 @@ def main():
         print "%s is not a directory. Quiting..." % LOG_PATH
         sys.exit(1)
 
+    url = "http://%s:%d/" % (my_ip(), port)
     print "Listening on port %d with %s as root path" % (port, LOG_PATH)
-    print "URLs are like: http://host-ip:%d/htmlify/screen-n-api.log" % port
-    print "Or goto http://host-ip:%d for a page of links" % port
+    print "URLs are like: %shtmlify/screen-n-api.log" % url
+    print "Or goto %s for a page of links" % url
 
     wsgiref.simple_server.make_server('', port, top_wsgi_app).serve_forever()
 

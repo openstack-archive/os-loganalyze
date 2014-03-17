@@ -40,3 +40,14 @@ Next steps, roughly in order
 * support swift logs (timestamp linking only, no sevs in swift logs)
 * provide links to logstash for request streams (link well know
   request ids to logstash queries for them)
+
+Hacking
+-------
+If you are working on making changes one of the easiest ways to do
+this is to run the server stack locally to see how your changes look
+on same data included for the tests.
+
+This can be done with ``tox -e run``, which will use the script
+designed for devstack locally pointed at the sample data. A url where
+you can browse the resultant content will be provided on the command
+line.
