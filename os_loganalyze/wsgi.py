@@ -105,10 +105,13 @@ a:hover {text-decoration: underline}
 .INFO, .INFO a {color: #006; font-weight: bold}
 #selector, #selector a {color: #888}
 #selector a:hover {color: #c00}
-.highlight {background-color: rgb(255, 255, 204); display: block}
-pre span span {margin-left: 0}
+.highlight {
+    background-color: rgb(255, 255, 204);
+    display: block;
+}
+pre span span {padding-left: 0}
 pre span {
-    margin-left: 22em;
+    padding-left: 22em;
     text-indent: -22em;
     white-space: pre-wrap;
     display: block;
