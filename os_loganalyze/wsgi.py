@@ -62,9 +62,12 @@ function remove_highlight() {
 }
 
 function update_selector(highlight) {
-    var links = document.getElementById('selector').getElementsByTagName('a');
-    for (var i = 0; i < links.length; i++) {
-        links[i].hash = "#" + highlight;
+    var selector = document.getElementById('selector');
+    if (selector) {
+        var links = selector.getElementsByTagName('a');
+        for (var i = 0; i < links.length; i++) {
+            links[i].hash = "#" + highlight;
+        }
     }
 }
 
