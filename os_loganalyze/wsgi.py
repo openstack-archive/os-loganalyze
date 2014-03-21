@@ -105,7 +105,7 @@ a:hover {text-decoration: underline}
 .ERROR, .ERROR a {color: #c00; font-weight: bold}
 .TRACE, .TRACE a {color: #c60}
 .WARNING, .WARNING a {color: #D89100;  font-weight: bold}
-.INFO, .INFO a {color: #006; font-weight: bold}
+.INFO, .INFO a {color: #006}
 #selector, #selector a {color: #888}
 #selector a:hover {color: #c00}
 .highlight {
