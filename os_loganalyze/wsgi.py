@@ -23,7 +23,7 @@ import sys
 import wsgiref.util
 
 # which logs support severity
-SUPPORTS_SEV = '(screen-(n-|c-|q-|g-|h-|ceil|key)|tempest\.txt)'
+SUPPORTS_SEV = '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key)|tempest\.txt)'
 
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
