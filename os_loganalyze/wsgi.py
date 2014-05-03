@@ -252,6 +252,11 @@ def html_filter(fname, minsev):
     yield _css_preamble(supports_sev)
 
     for line in fileinput.FileInput(fname, openhook=fileinput.hook_compressed):
+        # skip pre lines coming off the file, this fixes highlighting on
+        # console logs
+        if re.match('<(/)?pre>$', line):
+            continue
+
         if should_escape:
             newline = escape_html(line)
         else:

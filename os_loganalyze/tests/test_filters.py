@@ -83,12 +83,18 @@ class TestFilters(base.TestCase):
 
         # we shouldn't be dropping anything with the first line
         line = gen.next()
-        self.assertEqual("<span class='line'><pre>\n</span>", line)
-
-        line = gen.next()
-        self.assertIn("<a name='_2013-09-27_18_07_11_860' "
-                      "class='date' href='#_2013-09-27_18_07_11_860'>", line)
+        self.assertIn(
+            "</span><span class='line _2013-09-27_18_07_11_860'>"
+            "<a name='_2013-09-27_18_07_11_860' class='date' "
+            "href='#_2013-09-27_18_07_11_860'>2013-09-27 18:07:11.860</a> | "
+            "Started by user <a href='https://jenkins02.openstack.org/user"
+            "/null' class='model-link'>anonymous</a>",
+            line)
 
         line = gen.next()
         self.assertIn("<a name='_2013-09-27_18_07_11_884' "
                       "class='date' href='#_2013-09-27_18_07_11_884'>", line)
+
+        line = gen.next()
+        self.assertIn("<a name='_2013-09-27_18_09_18_784' "
+                      "class='date' href='#_2013-09-27_18_09_18_784'>", line)
