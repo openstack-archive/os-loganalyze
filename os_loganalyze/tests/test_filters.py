@@ -98,3 +98,33 @@ class TestFilters(base.TestCase):
         line = gen.next()
         self.assertIn("<a name='_2013-09-27_18_09_18_784' "
                       "class='date' href='#_2013-09-27_18_09_18_784'>", line)
+
+    def test_syslog_file_filter(self):
+        gen = self.get_generator('syslog.txt')
+        header = gen.next()
+        self.assertIn("Display level: ", header)
+
+        line = gen.next()
+        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("object-replicator: Object replication complete.", line)
+        line = gen.next()
+        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("object-server: Started child 32090", line)
+        line = gen.next()
+        self.assertIn("<span class='DEBUG'>", line)
+        self.assertIn('proxy-server: Pipeline is "catch_errors', line)
+
+    def test_syslog_file_filter_nodebug(self):
+        gen = self.get_generator('syslog.txt', level='INFO')
+        header = gen.next()
+        self.assertIn("Display level: ", header)
+
+        line = gen.next()
+        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("object-replicator: Object replication complete.", line)
+        line = gen.next()
+        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("object-server: Started child 32090", line)
+        line = gen.next()
+        self.assertIn("<span class='INFO'>", line)
+        self.assertIn('object-server: SIGTERM received', line)

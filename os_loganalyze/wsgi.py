@@ -32,8 +32,9 @@ except ImportError:
 
 
 # which logs support severity
-SUPPORTS_SEV = '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah)|tempest\.txt)'
+SUPPORTS_SEV = '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah)|tempest\.txt|syslog)'
 
+SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
 KEY_COMPONENT = '\([^\)]+\):'
@@ -42,6 +43,8 @@ OSLO_LOGMATCH = '^(?P<date>%s)(?P<pid> \d+)? (?P<status>%s)' % \
     (DATEFMT, STATUSFMT)
 KEY_LOGMATCH = '^(?P<comp>%s) (?P<date>%s) (?P<status>%s)' % \
     (KEY_COMPONENT, DATEFMT, STATUSFMT)
+SYSLOG_MATCH = '^(?P<date>%s) (?P<host>[\w\-]+) (?P<service>\S+):' % \
+    (SYSLOGDATE)
 
 
 SEVS = {
@@ -156,6 +159,13 @@ def not_html(fname):
     return re.search('(\.html(\.gz)?)$', fname) is None
 
 
+def syslog_sev_translator(service):
+    if service in ('tgtd', 'proxy-server'):
+        return 'DEBUG'
+    else:
+        return 'INFO'
+
+
 def sev_of_line(line, oldsev="NONE"):
     m = re.match(OSLO_LOGMATCH, line)
     if m:
@@ -164,6 +174,10 @@ def sev_of_line(line, oldsev="NONE"):
     m = re.match(KEY_LOGMATCH, line)
     if m:
         return m.group('status')
+
+    m = re.match(SYSLOG_MATCH, line)
+    if m:
+        return syslog_sev_translator(m.group('service'))
 
     return oldsev
 
