@@ -37,15 +37,13 @@ SUPPORTS_SEV = '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah)|tempest\.txt|syslog)'
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
-KEY_COMPONENT = '\([^\)]+\):'
 
 OSLO_LOGMATCH = '^(?P<date>%s)(?P<pid> \d+)? (?P<status>%s)' % \
     (DATEFMT, STATUSFMT)
-KEY_LOGMATCH = '^(?P<comp>%s) (?P<date>%s) (?P<status>%s)' % \
-    (KEY_COMPONENT, DATEFMT, STATUSFMT)
 SYSLOG_MATCH = '^(?P<date>%s) (?P<host>[\w\-]+) (?P<service>\S+):' % \
     (SYSLOGDATE)
 
+ALL_DATE = '(%s|%s)' % (DATEFMT, SYSLOGDATE)
 
 SEVS = {
     'NONE': 0,
@@ -171,10 +169,6 @@ def sev_of_line(line, oldsev="NONE"):
     if m:
         return m.group('status')
 
-    m = re.match(KEY_LOGMATCH, line)
-    if m:
-        return m.group('status')
-
     m = re.match(SYSLOG_MATCH, line)
     if m:
         return syslog_sev_translator(m.group('service'))
@@ -198,9 +192,10 @@ def escape_html(line):
 
 
 def link_timestamp(line):
+
     m = re.match(
-        '(<span class=\'(?P<class>[^\']+)\'>)?(?P<comp>%s )?'
-        '(?P<date>%s)(?P<rest>.*)' % (KEY_COMPONENT, DATEFMT),
+        '(<span class=\'(?P<class>[^\']+)\'>)?'
+        '(?P<date>%s)(?P<rest>.*)' % (ALL_DATE),
         line)
     if m:
         date = "_" + re.sub('[\s\:\.\,]', '_', m.group('date'))
@@ -208,9 +203,6 @@ def link_timestamp(line):
         # everyone that got this far had a date
         line = "<a name='%s' class='date' href='#%s'>%s</a>%s\n" % (
             date, date, m.group('date'), m.group('rest'))
-        # if we found a keystone component, add it back
-        if m.group('comp'):
-            line = ("%s" % m.group('comp')) + line
 
         # if we found a severity class, put the spans back
         if m.group('class'):

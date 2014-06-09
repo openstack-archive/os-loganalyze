@@ -84,17 +84,6 @@ class KnownFilesMixin(object):
             'WARNING': 50,
             'ERROR': 0,
             },
-        'screen-key.txt.gz': {
-            'TOTAL': 144983,
-            'DEBUG': 129842,
-            # there is curiousness in the fact that keystone logs have a lot
-            # of blank lines, so INFO is higher than you think it should be
-            'INFO': 15131,
-            'AUDIT': 0,
-            'WARNING': 6,
-            'TRACE': 0,
-            'ERROR': 0
-            },
         'screen-n-api.txt.gz': {
             'TOTAL': 50745,
             'DEBUG': 46071,
@@ -112,7 +101,7 @@ class KnownFilesMixin(object):
             'TRACE': 589,
             'WARNING': 48,
             'ERROR': 72,
-            }
+            },
         }
 
     def count_types(self, gen):
@@ -197,13 +186,13 @@ class TestWsgiSwift(base.TestSwiftFiles, BasicTestsMixin, KnownFilesMixin):
         """Compare loading logs from disk vs swift."""
         # Load from disk
         self.samples_directory = 'samples'
-        gen = self.get_generator('screen-key.txt.gz', html=False)
+        gen = self.get_generator('screen-c-api.txt.gz', html=False)
         result_disk = ''
         for line in gen:
             result_disk += line
 
         self.samples_directory = 'non-existent'
-        gen = self.get_generator('screen-key.txt.gz', html=False)
+        gen = self.get_generator('screen-c-api.txt.gz', html=False)
         result_swift = ''
         for line in gen:
             result_swift += line

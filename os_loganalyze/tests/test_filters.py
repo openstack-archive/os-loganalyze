@@ -45,16 +45,6 @@ class TestFilters(base.TestCase):
         self.assertIn("class='DEBUG", line)
         self.assertIn("href='#_2013-09-27_18_22_11_249'", line)
 
-    def test_keystone_filters(self):
-        gen = self.get_generator('screen-key.txt.gz', level='DEBUG')
-        # we don't need the header, we just don't want to deal with it
-        gen.next()
-
-        # first line is DEBUG
-        line = gen.next()
-        self.assertIn("class='DEBUG", line)
-        self.assertIn("href='#_2013-09-27_18_20_55_636'", line)
-
     def test_devstack_filters(self):
         gen = self.get_generator('devstacklog.txt.gz')
         # dump the header
@@ -105,13 +95,13 @@ class TestFilters(base.TestCase):
         self.assertIn("Display level: ", header)
 
         line = gen.next()
-        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("<span class='INFO", line)
         self.assertIn("object-replicator: Object replication complete.", line)
         line = gen.next()
-        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("<span class='INFO", line)
         self.assertIn("object-server: Started child 32090", line)
         line = gen.next()
-        self.assertIn("<span class='DEBUG'>", line)
+        self.assertIn("<span class='DEBUG", line)
         self.assertIn('proxy-server: Pipeline is "catch_errors', line)
 
     def test_syslog_file_filter_nodebug(self):
@@ -120,11 +110,11 @@ class TestFilters(base.TestCase):
         self.assertIn("Display level: ", header)
 
         line = gen.next()
-        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("<span class='INFO", line)
         self.assertIn("object-replicator: Object replication complete.", line)
         line = gen.next()
-        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("<span class='INFO", line)
         self.assertIn("object-server: Started child 32090", line)
         line = gen.next()
-        self.assertIn("<span class='INFO'>", line)
+        self.assertIn("<span class='INFO", line)
         self.assertIn('object-server: SIGTERM received', line)
