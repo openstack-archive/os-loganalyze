@@ -22,13 +22,8 @@ import os.path
 import re
 import sys
 
+import os_loganalyze.filter as osfilter
 import os_loganalyze.generator as osgen
-
-
-# which logs support severity
-SUPPORTS_SEV = (
-    '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah)'  # openstack screen logs
-    '|tempest\.txt|syslog)')  # other things we understand
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
@@ -40,16 +35,6 @@ SYSLOG_MATCH = '^(?P<date>%s) (?P<host>[\w\-]+) (?P<service>\S+):' % \
     (SYSLOGDATE)
 
 ALL_DATE = '(%s|%s)' % (DATEFMT, SYSLOGDATE)
-
-SEVS = {
-    'NONE': 0,
-    'DEBUG': 1,
-    'INFO': 2,
-    'AUDIT': 3,
-    'TRACE': 4,
-    'WARNING': 5,
-    'ERROR': 6
-    }
 
 
 def _html_close():
@@ -144,11 +129,6 @@ Display level: [
     return header
 
 
-def file_supports_sev(fname):
-    m = re.search(SUPPORTS_SEV, fname)
-    return m is not None
-
-
 def not_html(fname):
     return re.search('(\.html(\.gz)?)$', fname) is None
 
@@ -174,7 +154,7 @@ def sev_of_line(line, oldsev="NONE"):
 
 def color_by_sev(line, sev):
     """Wrap a line in a span whose class matches it's severity."""
-    return "<span class='%s'>%s</span>" % (sev, line)
+    return "</span><span class='%s'>%s" % (sev, line)
 
 
 def escape_html(line):
@@ -189,7 +169,7 @@ def escape_html(line):
 
 def link_timestamp(line):
 
-    m = re.match(
+    m = re.search(
         '(<span class=\'(?P<class>[^\']+)\'>)?'
         '(?P<date>%s)(?P<rest>.*)' % (ALL_DATE),
         line)
@@ -208,26 +188,8 @@ def link_timestamp(line):
     return line
 
 
-def skip_line_by_sev(sev, minsev):
-    """should we skip this line?
-
-    If the line severity is less than our minimum severity,
-    yes we should.
-    """
-    return SEVS.get(sev, 0) < SEVS.get(minsev, 0)
-
-
 def passthrough_filter(fname, flines_generator, minsev):
-    sev = "NONE"
-    supports_sev = file_supports_sev(fname)
-
     for line in flines_generator:
-        if supports_sev:
-            sev = sev_of_line(line, sev)
-
-            if skip_line_by_sev(sev, minsev):
-                continue
-
         yield line
 
 
@@ -238,11 +200,10 @@ def html_filter(fname, flines_generator, minsev):
     data quickly to the user, and use minimal memory in the process.
     """
 
-    supports_sev = file_supports_sev(fname)
     sev = "NONE"
     should_escape = not_html(fname)
 
-    yield _css_preamble(supports_sev)
+    yield _css_preamble(flines_generator.supports_sev)
 
     for line in flines_generator:
         # skip pre lines coming off the file, this fixes highlighting on
@@ -255,10 +216,8 @@ def html_filter(fname, flines_generator, minsev):
         else:
             newline = line
 
-        if supports_sev:
-            sev = sev_of_line(newline, sev)
-            if skip_line_by_sev(sev, minsev):
-                continue
+        sev = sev_of_line(newline, sev)
+        if sev:
             newline = color_by_sev(newline, sev)
         else:
             newline = "<span class='line'>" + newline + '</span>'
@@ -345,6 +304,7 @@ def application(environ, start_response, root_path=None,
         return ['File Not Found']
 
     minsev = get_min_sev(environ)
+    flines_generator = osfilter.Filter(logname, flines_generator, minsev)
     if should_be_html(environ):
         response_headers = [('Content-type', 'text/html')]
         generator = html_filter(logname, flines_generator, minsev)
