@@ -84,20 +84,28 @@ class LogLine(object):
 
 class Filter(object):
 
-    def __init__(self, fname, generator, minsev="NONE"):
+    def __init__(self, fname, generator, minsev="NONE", limit=None):
         self.minsev = minsev
         self.gen = generator
         self.supports_sev = SUPPORTS_SEV.search(fname) is not None
         self.fname = fname
+        self.limit = limit
 
     def __iter__(self):
         old_sev = "NONE"
+        lineno = 0
         for line in self.gen:
+            # bail early for limits
+            if self.limit and lineno >= int(self.limit):
+                raise StopIteration()
+
             logline = LogLine(line, old_sev)
+
             if self.supports_sev and self.skip_by_sev(logline.status):
                 old_sev = logline.status
                 continue
 
+            lineno += 1
             old_sev = logline.status
             yield logline.date + logline.line
 

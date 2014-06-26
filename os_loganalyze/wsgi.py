@@ -271,6 +271,14 @@ def get_min_sev(environ):
         return "NONE"
 
 
+def get_limit(environ):
+    parameters = cgi.parse_qs(environ.get('QUERY_STRING', ''))
+    if 'limit' in parameters:
+        return cgi.escape(parameters['limit'][0])
+    else:
+        return None
+
+
 def get_config(wsgi_config):
     config = ConfigParser.ConfigParser()
     config.read(os.path.expanduser(wsgi_config))
@@ -304,7 +312,9 @@ def application(environ, start_response, root_path=None,
         return ['File Not Found']
 
     minsev = get_min_sev(environ)
-    flines_generator = osfilter.Filter(logname, flines_generator, minsev)
+    limit = get_limit(environ)
+    flines_generator = osfilter.Filter(
+        logname, flines_generator, minsev, limit)
     if should_be_html(environ):
         response_headers = [('Content-type', 'text/html')]
         generator = html_filter(logname, flines_generator, minsev)

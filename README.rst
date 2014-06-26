@@ -27,6 +27,8 @@ Features
 * filtering based on severity using the level=XXXX parameter (works in
   either text/html or text/plain responses
 * linking and highlighting of lines based on timestamp
+* control of max number of lines that will be returned using the
+  limit=XXXX parameter
 * Provides a script named htmlify_server.py that serves htmlified logs
   over HTTP. To view devstack logs: set
   SCREEN_LOGDIR=$DEST/logs/screen and LOG_COLOR=false in localrc

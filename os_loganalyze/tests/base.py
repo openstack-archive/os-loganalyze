@@ -17,6 +17,7 @@
 
 import os
 import os.path
+import urllib
 from wsgiref.util import setup_testing_defaults
 
 import fixtures
@@ -80,11 +81,15 @@ class TestCase(testtools.TestCase):
         setup_testing_defaults(environ)
         return environ
 
-    def get_generator(self, fname, level=None, html=True):
+    def get_generator(self, fname, level=None, html=True, limit=None):
         kwargs = {'PATH_INFO': '/htmlify/%s' % fname}
-
+        qs = {}
         if level:
-            kwargs['QUERY_STRING'] = 'level=%s' % level
+            qs['level'] = level
+        if limit:
+            qs['limit'] = limit
+        if qs:
+            kwargs['QUERY_STRING'] = urllib.urlencode(qs)
 
         if html:
             kwargs['HTTP_ACCEPT'] = 'text/html'
