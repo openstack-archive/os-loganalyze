@@ -19,6 +19,7 @@ import fileinput
 import os.path
 import re
 import types
+import warnings
 import wsgiref.util
 import zlib
 
@@ -85,6 +86,7 @@ def safe_path(root, log_name):
 
 def get_swift_line_generator(logname, config):
     if not config.has_section('swift'):
+        warnings.warn('Not configured to use swift..')
         return None
 
     try:
@@ -146,6 +148,9 @@ def get_swift_line_generator(logname, config):
         return line_generator()
 
     except Exception:
+        import traceback
+        warnings.warn("Error fetching from swift")
+        warnings.warn(traceback.format_exc())
         return None
 
 
