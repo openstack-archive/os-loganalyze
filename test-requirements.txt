@@ -9,6 +9,3 @@ oslo.sphinx
 testrepository>=0.0.17
 testscenarios>=0.4,<0.5
 testtools>=0.9.32
-
-python-swiftclient>=1.6
-python-keystoneclient>=0.4.2
