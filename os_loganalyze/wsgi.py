@@ -34,7 +34,7 @@ except ImportError:
 # which logs support severity
 SUPPORTS_SEV = (
     '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah)'  # openstack screen logs
-    '|grenade.sh|tempest\.txt|syslog)')  # other things we understand
+    '|tempest\.txt|syslog)')  # other things we understand
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
