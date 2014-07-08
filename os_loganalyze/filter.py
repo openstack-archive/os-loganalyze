@@ -90,6 +90,10 @@ class Filter(object):
         self.supports_sev = SUPPORTS_SEV.search(fname) is not None
         self.fname = fname
         self.limit = limit
+        self.strip_control = False
+
+    def strip(self, line):
+        return re.sub('\x1b\[(([03]\d)|\;)+m', '', line)
 
     def __iter__(self):
         old_sev = "NONE"
@@ -98,6 +102,9 @@ class Filter(object):
             # bail early for limits
             if self.limit and lineno >= int(self.limit):
                 raise StopIteration()
+            # strip control chars in case the console is ascii colored
+            if self.strip_control:
+                line = self.strip(line)
 
             logline = LogLine(line, old_sev)
 

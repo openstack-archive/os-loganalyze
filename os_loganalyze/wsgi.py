@@ -315,6 +315,8 @@ def application(environ, start_response, root_path=None,
     limit = get_limit(environ)
     flines_generator = osfilter.Filter(
         logname, flines_generator, minsev, limit)
+    if environ.get('OS_LOGANALYZE_STRIP', None):
+        flines_generator.strip_control = True
     if should_be_html(environ):
         response_headers = [('Content-type', 'text/html')]
         generator = html_filter(logname, flines_generator, minsev)
