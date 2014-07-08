@@ -288,8 +288,8 @@ def get_config(wsgi_config):
 def application(environ, start_response, root_path=None,
                 wsgi_config='/etc/os_loganalyze/wsgi.conf'):
     if root_path is None:
-        root_path = os.environ.get('OS_LOGANALYZE_ROOT_PATH',
-                                   '/srv/static/logs')
+        root_path = environ.get('OS_LOGANALYZE_ROOT_PATH',
+                                '/srv/static/logs')
     config = get_config(wsgi_config)
 
     # make root path absolute in case we have a path with local components
