@@ -100,7 +100,7 @@ class TestCase(testtools.TestCase):
             root_path=samples_path(self.samples_directory),
             wsgi_config=self.wsgi_config_file)
 
-        return gen
+        return iter(gen)
 
 
 class TestSwiftFiles(TestCase):

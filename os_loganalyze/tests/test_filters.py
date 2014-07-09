@@ -74,11 +74,11 @@ class TestFilters(base.TestCase):
         # we shouldn't be dropping anything with the first line
         line = gen.next()
         self.assertIn(
-            "</span><span class='NONE _2013-09-27_18_07_11_860'>"
+            "<span class='NONE _2013-09-27_18_07_11_860'>"
             "<a name='_2013-09-27_18_07_11_860' class='date' "
             "href='#_2013-09-27_18_07_11_860'>2013-09-27 18:07:11.860</a> | "
             "Started by user <a href='https://jenkins02.openstack.org/user"
-            "/null' class='model-link'>anonymous</a>",
+            "/null' class='model-link'>anonymous</a>\n</span>",
             line)
 
         line = gen.next()

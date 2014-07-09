@@ -31,9 +31,11 @@ OSLO_LOGMATCH = '^(?P<date>%s)(?P<line>(?P<pid> \d+)? (?P<status>%s).*)' % \
 SYSLOG_MATCH = ('^(?P<date>%s)(?P<line> (?P<host>[\w\-]+) '
                 '(?P<service>\S+):.*)' %
                 (SYSLOGDATE))
+CONSOLE_MATCH = '^(?P<date>%s)(?P<line>.*)' % DATEFMT
 
 OSLORE = re.compile(OSLO_LOGMATCH)
 SYSLOGRE = re.compile(SYSLOG_MATCH)
+CONSOLERE = re.compile(CONSOLE_MATCH)
 
 SEVS = {
     'NONE': 0,
@@ -62,6 +64,9 @@ class LogLine(object):
         else:
             return 'INFO'
 
+    def safe_date(self):
+        return '_' + re.sub('[\s\:\.\,]', '_', self.date)
+
     def _parse(self, line, old_sev):
         m = OSLORE.match(line)
         if m:
@@ -69,6 +74,12 @@ class LogLine(object):
             self.line = m.group('line')
             self.date = m.group('date')
             self.pid = m.group('pid')
+            return
+        m = CONSOLERE.match(line)
+        if m:
+            self.date = m.group('date')
+            self.status = old_sev
+            self.line = m.group('line')
             return
         m = SYSLOGRE.match(line)
         if m:
@@ -79,7 +90,7 @@ class LogLine(object):
             return
 
         self.status = old_sev
-        self.line = line
+        self.line = line.rstrip()
 
 
 class Filter(object):
@@ -114,7 +125,7 @@ class Filter(object):
 
             lineno += 1
             old_sev = logline.status
-            yield logline.date + logline.line
+            yield logline
 
     def skip_by_sev(self, sev):
         """should we skip this line?
