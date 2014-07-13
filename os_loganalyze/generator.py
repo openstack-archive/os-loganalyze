@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (c) 2013 IBM Corp.
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
