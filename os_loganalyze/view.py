@@ -193,3 +193,16 @@ class TextView(collections.Iterable):
     def __iter__(self):
         for line in self.gen:
             yield line.date + line.line + "\n"
+
+
+class PassthroughView(collections.Iterable):
+    headers = []
+
+    def __init__(self, gen, file_headers):
+        self.gen = gen
+        for hn, hv in file_headers.items():
+            self.headers.append((hn, hv))
+
+    def __iter__(self):
+        for line in self.gen:
+            yield line

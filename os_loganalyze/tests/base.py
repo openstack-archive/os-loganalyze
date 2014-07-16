@@ -25,7 +25,6 @@ import testtools
 
 import os_loganalyze.wsgi as log_wsgi
 
-
 _TRUE_VALUES = ('true', '1', 'yes')
 
 

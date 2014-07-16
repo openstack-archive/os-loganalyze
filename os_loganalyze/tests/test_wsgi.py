@@ -24,6 +24,7 @@ import fixtures
 import swiftclient  # noqa needed for monkeypatching
 
 from os_loganalyze.tests import base
+import os_loganalyze.util
 import os_loganalyze.wsgi as log_wsgi
 
 
@@ -162,6 +163,14 @@ class TestWsgiDisk(base.TestCase):
             '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
             first)
 
+    def test_passthrough_filter(self):
+        # Test the passthrough filter returns an image stream
+        gen = self.get_generator('openstack_logo.png')
+        first = gen.next()
+        self.assertNotIn('html', first)
+        with open(base.samples_path('samples') + 'openstack_logo.png') as f:
+            self.assertEqual(first, f.readline())
+
 
 class TestWsgiSwift(TestWsgiDisk):
     """Test loading files from swift."""
@@ -186,7 +195,9 @@ class TestWsgiSwift(TestWsgiDisk):
                 else:
                     with open(base.samples_path('samples') + name) as f:
                         object_body = f.read()
-                return [], object_body
+                resp_headers = os_loganalyze.util.get_headers_for_file(
+                    base.samples_path('samples') + name)
+                return resp_headers, object_body
 
         self.useFixture(fixtures.MonkeyPatch(
             'swiftclient.client.Connection', fake_swiftclient))

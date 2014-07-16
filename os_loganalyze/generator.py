@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2013 IBM Corp.
 # Copyright (c) 2014 Hewlett-Packard Development Company, L.P.
+# Copyright (c) 2014 Rackspace Australia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -104,10 +105,11 @@ _get_swift_connection.con = None
 
 
 def get_swift_line_generator(logname, config):
+    resp_headers = {}
     if not config.has_section('swift'):
         sys.stderr.write('Not configured to use swift..\n')
         sys.stderr.write('logname: %s\n' % logname)
-        return None
+        return resp_headers, None
 
     try:
         swift_config = dict(config.items('swift'))
@@ -158,21 +160,23 @@ def get_swift_line_generator(logname, config):
                 if partial != '':
                     yield partial
 
-        return line_generator()
+        return resp_headers, line_generator()
 
     except Exception:
         import traceback
         sys.stderr.write("Error fetching from swift.\n")
         sys.stderr.write('logname: %s\n' % logname)
         traceback.print_exc()
-        return None
+        return resp_headers, None
 
 
 def get(environ, root_path, config=None):
     logname = log_name(environ)
     logpath = safe_path(root_path, logname)
+    file_headers = {}
     if not logpath:
         raise UnsafePath()
+    file_headers['filename'] = os.path.basename(logpath)
 
     flines_generator = None
     # if we want swift only, we'll skip processing files
@@ -181,13 +185,17 @@ def get(environ, root_path, config=None):
     if use_files and does_file_exist(logpath):
         flines_generator = fileinput.FileInput(
             logpath, openhook=fileinput.hook_compressed)
+        file_headers.update(util.get_headers_for_file(logpath))
     else:
-        flines_generator = get_swift_line_generator(logname, config)
+        resp_headers, flines_generator = get_swift_line_generator(logname,
+                                                                  config)
         if not flines_generator:
             logname = os.path.join(logname, 'index.html')
-            flines_generator = get_swift_line_generator(logname, config)
+            resp_headers, flines_generator = get_swift_line_generator(logname,
+                                                                      config)
+        file_headers.update(resp_headers)
 
     if not flines_generator:
         raise NoSuchFile()
 
-    return logname, flines_generator
+    return logname, flines_generator, file_headers

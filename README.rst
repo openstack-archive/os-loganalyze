@@ -42,7 +42,6 @@ Todo
 ------------
 Next steps, roughly in order
 
-* support swift logs (timestamp linking only, no sevs in swift logs)
 * provide links to logstash for request streams (link well know
   request ids to logstash queries for them)
 

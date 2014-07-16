@@ -63,6 +63,28 @@ def get_config(wsgi_config):
     return config
 
 
+def use_passthrough_view(file_headers):
+    """Determine if we need to use the passthrough filter."""
+
+    if 'content-type' not in file_headers:
+        # For legacy we'll try and format. This shouldn't occur though.
+        return False
+    else:
+        if file_headers['content-type'] in ['text/plain', 'text/html']:
+            # We want to format these files
+            return False
+        if file_headers['content-type'] in ['application/x-gzip',
+                                            'application/gzip']:
+            # We'll need to guess if we should render the output or offer a
+            # download.
+            filename = file_headers['filename']
+            filename = filename[:-3] if filename[-3:] == '.gz' else filename
+            if os.path.splitext(filename)[1] in ['.txt', '.html']:
+                return False
+
+    return True
+
+
 def application(environ, start_response, root_path=None,
                 wsgi_config='/etc/os_loganalyze/wsgi.conf'):
     if root_path is None:
@@ -77,7 +99,8 @@ def application(environ, start_response, root_path=None,
     status = '200 OK'
 
     try:
-        logname, flines_generator = osgen.get(environ, root_path, config)
+        logname, flines_generator, file_headers = osgen.get(environ, root_path,
+                                                            config)
     except osgen.UnsafePath:
         status = '400 Bad Request'
         response_headers = [('Content-type', 'text/plain')]
@@ -89,16 +112,20 @@ def application(environ, start_response, root_path=None,
         start_response(status, response_headers)
         return ['File Not Found']
 
-    minsev = util.parse_param(environ, 'level', default="NONE")
-    limit = util.parse_param(environ, 'limit')
-    flines_generator = osfilter.Filter(
-        logname, flines_generator, minsev, limit)
-    if environ.get('OS_LOGANALYZE_STRIP', None):
-        flines_generator.strip_control = True
-    if should_be_html(environ):
-        generator = osview.HTMLView(flines_generator)
+    if use_passthrough_view(file_headers):
+        generator = osview.PassthroughView(flines_generator,
+                                           file_headers)
     else:
-        generator = osview.TextView(flines_generator)
+        minsev = util.parse_param(environ, 'level', default="NONE")
+        limit = util.parse_param(environ, 'limit')
+        flines_generator = osfilter.Filter(
+            logname, flines_generator, minsev, limit)
+        if environ.get('OS_LOGANALYZE_STRIP', None):
+            flines_generator.strip_control = True
+        if should_be_html(environ):
+            generator = osview.HTMLView(flines_generator)
+        else:
+            generator = osview.TextView(flines_generator)
 
     start_response(status, generator.headers)
     return generator

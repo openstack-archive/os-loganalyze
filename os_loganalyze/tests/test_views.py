@@ -28,7 +28,7 @@ class TestViews(base.TestCase):
         # wsgi application. We just need the generator to give to Views.
         root_path = base.samples_path(self.samples_directory)
         kwargs = {'PATH_INFO': '/htmlify/%s' % fname}
-        logname, gen = osgen.get(self.fake_env(**kwargs), root_path)
+        logname, gen, headers = osgen.get(self.fake_env(**kwargs), root_path)
         flines_generator = osfilter.Filter(logname, gen)
         return flines_generator
 
