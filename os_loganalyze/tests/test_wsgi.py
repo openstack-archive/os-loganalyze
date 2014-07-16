@@ -199,6 +199,13 @@ class TestWsgiSwift(base.TestSwiftFiles, BasicTestsMixin, KnownFilesMixin):
 
         self.assertEqual(result_disk, result_swift)
 
+    def test_skip_file(self):
+        # this should generate a TypeError because we're telling it to
+        # skip the filesystem, but we don't have a working swift here.
+        self.assertRaises(
+            TypeError,
+            self.get_generator('screen-c-api.txt.gz', source='swift'))
+
     def test_compare_disk_to_swift_no_compression(self):
         """Compare loading logs from disk vs swift."""
         # Load from disk

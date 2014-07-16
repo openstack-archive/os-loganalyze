@@ -23,6 +23,7 @@ import sys
 
 import os_loganalyze.filter as osfilter
 import os_loganalyze.generator as osgen
+import os_loganalyze.util as util
 import os_loganalyze.view as osview
 
 
@@ -54,23 +55,6 @@ def should_be_html(environ):
             text_override = True
 
     return accepts_html and not text_override
-
-
-def get_min_sev(environ):
-    print environ.get('QUERY_STRING')
-    parameters = cgi.parse_qs(environ.get('QUERY_STRING', ''))
-    if 'level' in parameters:
-        return cgi.escape(parameters['level'][0])
-    else:
-        return "NONE"
-
-
-def get_limit(environ):
-    parameters = cgi.parse_qs(environ.get('QUERY_STRING', ''))
-    if 'limit' in parameters:
-        return cgi.escape(parameters['limit'][0])
-    else:
-        return None
 
 
 def get_config(wsgi_config):
@@ -105,8 +89,8 @@ def application(environ, start_response, root_path=None,
         start_response(status, response_headers)
         return ['File Not Found']
 
-    minsev = get_min_sev(environ)
-    limit = get_limit(environ)
+    minsev = util.parse_param(environ, 'level', default="NONE")
+    limit = util.parse_param(environ, 'limit')
     flines_generator = osfilter.Filter(
         logname, flines_generator, minsev, limit)
     if environ.get('OS_LOGANALYZE_STRIP', None):
