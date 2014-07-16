@@ -18,8 +18,8 @@
 import fileinput
 import os.path
 import re
+import sys
 import types
-import warnings
 import wsgiref.util
 import zlib
 
@@ -86,7 +86,8 @@ def safe_path(root, log_name):
 
 def get_swift_line_generator(logname, config):
     if not config.has_section('swift'):
-        warnings.warn('Not configured to use swift..')
+        sys.stderr.write('Not configured to use swift..\n')
+        sys.stderr.write('logname: %s\n' % logname)
         return None
 
     try:
@@ -149,8 +150,9 @@ def get_swift_line_generator(logname, config):
 
     except Exception:
         import traceback
-        warnings.warn("Error fetching from swift")
-        warnings.warn(traceback.format_exc())
+        sys.stderr.write("Error fetching from swift.\n")
+        sys.stderr.write('logname: %s\n' % logname)
+        traceback.print_exc()
         return None
 
 
