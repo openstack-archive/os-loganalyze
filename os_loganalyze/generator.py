@@ -173,6 +173,9 @@ def get(environ, root_path, config=None):
             logpath, openhook=fileinput.hook_compressed)
     else:
         flines_generator = get_swift_line_generator(logname, config)
+        if not flines_generator:
+            logname = os.path.join(logname, 'index.html')
+            flines_generator = get_swift_line_generator(logname, config)
 
     if not flines_generator:
         raise NoSuchFile()
