@@ -23,6 +23,8 @@ import types
 import wsgiref.util
 import zlib
 
+import os_loganalyze.util as util
+
 try:
     import swiftclient
 except ImportError:
@@ -163,7 +165,10 @@ def get(environ, root_path, config=None):
         raise UnsafePath()
 
     flines_generator = None
-    if does_file_exist(logpath):
+    # if we want swift only, we'll skip processing files
+    use_files = (util.parse_param(environ, 'source', default='all')
+                 != 'swift')
+    if use_files and does_file_exist(logpath):
         flines_generator = fileinput.FileInput(
             logpath, openhook=fileinput.hook_compressed)
     else:

@@ -81,13 +81,16 @@ class TestCase(testtools.TestCase):
         setup_testing_defaults(environ)
         return environ
 
-    def get_generator(self, fname, level=None, html=True, limit=None):
+    def get_generator(self, fname, level=None, html=True,
+                      limit=None, source=None):
         kwargs = {'PATH_INFO': '/htmlify/%s' % fname}
         qs = {}
         if level:
             qs['level'] = level
         if limit:
             qs['limit'] = limit
+        if source:
+            qs['source'] = source
         if qs:
             kwargs['QUERY_STRING'] = urllib.urlencode(qs)
 

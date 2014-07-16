@@ -29,6 +29,9 @@ Features
 * linking and highlighting of lines based on timestamp
 * control of max number of lines that will be returned using the
   limit=XXXX parameter
+* Support for specifying which backend source will be used. As we
+  support filesystems and swift containers simultaneously, you can
+  specify source=swift to only use the swift container backend.
 * Provides a script named htmlify_server.py that serves htmlified logs
   over HTTP. To view devstack logs: set
   SCREEN_LOGDIR=$DEST/logs/screen and LOG_COLOR=false in localrc
