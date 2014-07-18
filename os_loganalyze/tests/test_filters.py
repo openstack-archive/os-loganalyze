@@ -121,13 +121,11 @@ class TestFilters(base.TestCase):
 
     def test_limit_filters(self):
         gen = self.get_generator('devstacklog.txt.gz', limit=10)
-        # dump the header
-        gen.next()
 
-        # first line
         lines = 0
         for line in gen:
             lines += 1
 
-        # this is an html file, so 1 extra line for the footers
-        self.assertEqual(11, lines)
+        # the lines should actually be 2 + the limit we've asked for
+        # given the header and footer
+        self.assertEqual(12, lines)

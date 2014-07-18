@@ -108,7 +108,7 @@ class Filter(object):
 
     def __iter__(self):
         old_sev = "NONE"
-        lineno = 0
+        lineno = 1
         for line in self.gen:
             # bail early for limits
             if self.limit and lineno >= int(self.limit):

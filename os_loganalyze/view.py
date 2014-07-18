@@ -55,7 +55,7 @@ Display level: [
 <a href='?level=ERROR'>ERROR</a> ]
 </span>"""
 
-HTML_HEADER_BODY = "<pre>"
+HTML_HEADER_BODY = "\n<pre>"
 
 HTML_FOOTER = """</pre></body>
 <script>
@@ -106,40 +106,64 @@ highlight_by_hash();
 DATE_LINE = ("<span class='%s %s'><a name='%s' class='date' href='#%s'>"
              "%s</a>%s\n</span>")
 NONDATE_LINE = "<span class='%s'>%s\n</span>"
+HTML_RE = re.compile("<html")
+SKIP_LINES = re.compile("</?pre>")
 
 
 class HTMLView(collections.Iterable):
     headers = [('Content-type', 'text/html')]
     should_escape = True
     sent_header = False
+    is_html = False
 
     def __init__(self, gen):
         self.gen = gen
 
+    def _discover_html(self, line):
+        self.is_html = HTML_RE.match(line)
+        self.should_escape = False
+
+    def _process_line(self, line):
+        if SKIP_LINES.match(line.line):
+            # pre tags mean we're partial html and shouldn't escape
+            self.should_escape = False
+            return
+
+        if self.should_escape:
+            safeline = cgi.escape(line.line)
+        else:
+            safeline = line.line
+
+        if line.date:
+            safe_date = line.safe_date()
+            newline = DATE_LINE % (line.status, safe_date, safe_date,
+                                   safe_date, line.date, safeline)
+        else:
+            newline = NONDATE_LINE % (line.status, safeline)
+        return newline
+
     def __iter__(self):
-        header = HTML_HEADER
-        if self.gen.supports_sev:
-            header += HTML_HEADER_SEV
-        header += HTML_HEADER_BODY
-        yield header
+        first_line = next(x for x in self.gen)
+        self._discover_html(first_line.line)
+
+        if not self.is_html:
+            header = HTML_HEADER
+            if self.gen.supports_sev:
+                header += HTML_HEADER_SEV
+            header += HTML_HEADER_BODY
+            yield header
+
+        first = self._process_line(first_line)
+        if first:
+            yield first
 
         for line in self.gen:
-            if re.match('<(/)?pre>$', line.line):
-                self.should_escape = False
-                continue
-            if self.should_escape:
-                safeline = cgi.escape(line.line)
-            else:
-                safeline = line.line
+            newline = self._process_line(line)
+            if newline:
+                yield newline
 
-            if line.date:
-                safe_date = line.safe_date()
-                newline = DATE_LINE % (line.status, safe_date, safe_date,
-                                       safe_date, line.date, safeline)
-            else:
-                newline = NONDATE_LINE % (line.status, safeline)
-            yield newline
-        yield HTML_FOOTER
+        if not self.is_html:
+            yield HTML_FOOTER
 
 
 class TextView(collections.Iterable):
