@@ -22,12 +22,12 @@ LOG_COLOR=false
 
 import argparse
 import os
-from os_loganalyze.wsgi import application
 import re
 import socket
 import sys
 import wsgiref.simple_server
 
+from os_loganalyze import wsgi
 
 DEF_PORT = 8000
 LOG_PATH = '/opt/stack/logs/screen/'
@@ -57,8 +57,8 @@ def top_wsgi_app(environ, start_response):
     if bool(re.search('^/$|^/htmlify/?$', req_path)):
         return gen_links_wsgi_app(environ, start_response)
     else:
-        return application(environ, start_response, root_path=LOG_PATH,
-                           wsgi_config=WSGI_CONFIG)
+        return wsgi.application(environ, start_response, root_path=LOG_PATH,
+                                wsgi_config=WSGI_CONFIG)
 
 
 def gen_links_wsgi_app(environ, start_response):
@@ -101,13 +101,13 @@ def main():
     port, LOG_PATH, WSGI_CONFIG = parse_args()
 
     if not os.path.isdir(LOG_PATH):
-        print "%s is not a directory. Quiting..." % LOG_PATH
+        print("%s is not a directory. Quiting..." % LOG_PATH)
         sys.exit(1)
 
     url = "http://%s:%d/" % (my_ip(), port)
-    print "Listening on port %d with %s as root path" % (port, LOG_PATH)
-    print "URLs are like: %shtmlify/screen-n-api.log" % url
-    print "Or goto %s for a page of links" % url
+    print("Listening on port %d with %s as root path" % (port, LOG_PATH))
+    print("URLs are like: %shtmlify/screen-n-api.log" % url)
+    print("Or goto %s for a page of links" % url)
 
     wsgiref.simple_server.make_server('', port, top_wsgi_app).serve_forever()
 

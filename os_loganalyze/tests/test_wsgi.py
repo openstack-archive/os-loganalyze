@@ -152,7 +152,7 @@ class KnownFilesMixin(object):
 
                 counts = self.count_types(gen)
                 total = self.compute_total(level, fname)
-                print fname, counts
+                print(fname, counts)
 
                 self.assertEqual(counts['TOTAL'], total)
 
