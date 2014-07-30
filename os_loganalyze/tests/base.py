@@ -18,7 +18,7 @@
 import os
 import os.path
 import urllib
-from wsgiref.util import setup_testing_defaults
+from wsgiref import util
 
 import fixtures
 import swiftclient
@@ -78,7 +78,7 @@ class TestCase(testtools.TestCase):
 
     def fake_env(self, **kwargs):
         environ = dict(**kwargs)
-        setup_testing_defaults(environ)
+        util.setup_testing_defaults(environ)
         return environ
 
     def get_generator(self, fname, level=None, html=True,
