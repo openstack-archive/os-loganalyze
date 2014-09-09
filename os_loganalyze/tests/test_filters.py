@@ -89,6 +89,18 @@ class TestFilters(base.TestCase):
         self.assertIn("<a name='_2013-09-27_18_09_18_784' "
                       "class='date' href='#_2013-09-27_18_09_18_784'>", line)
 
+    def test_html_escape(self):
+        gen = self.get_generator('screen-n-api-2.txt.gz')
+        # throw away header
+        gen.next()
+
+        line = gen.next()
+        self.assertIn(
+            "Calling method &lt;bound method Versions.index of "
+            "&lt;nova.api.openstack.compute.versions.Versions object at "
+            "0x371dad0&gt;&gt; _process_stack",
+            line)
+
     def test_syslog_file_filter(self):
         gen = self.get_generator('syslog.txt')
         header = gen.next()

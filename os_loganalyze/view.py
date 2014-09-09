@@ -121,7 +121,8 @@ class HTMLView(collections.Iterable):
 
     def _discover_html(self, line):
         self.is_html = HTML_RE.match(line)
-        self.should_escape = False
+        if self.is_html:
+            self.should_escape = False
 
     def _process_line(self, line):
         if SKIP_LINES.match(line.line):
