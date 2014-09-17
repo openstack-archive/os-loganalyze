@@ -86,6 +86,23 @@ def safe_path(root, log_name):
     return None
 
 
+def _get_swift_connection(swift_config):
+    # TODO(jhesketh): refactor the generator into a class so we can keep a
+    # persistent connection. For now, emulate a static variable on this method
+    # called 'con'.
+    if not _get_swift_connection.con:
+        _get_swift_connection.con = swiftclient.client.Connection(
+            authurl=swift_config['authurl'],
+            user=swift_config['user'],
+            key=swift_config['password'],
+            os_options={'region_name': swift_config['region']},
+            tenant_name=swift_config['tenant'],
+            auth_version=2.0
+        )
+    return _get_swift_connection.con
+_get_swift_connection.con = None
+
+
 def get_swift_line_generator(logname, config):
     if not config.has_section('swift'):
         sys.stderr.write('Not configured to use swift..\n')
@@ -94,14 +111,7 @@ def get_swift_line_generator(logname, config):
 
     try:
         swift_config = dict(config.items('swift'))
-        con = swiftclient.client.Connection(
-            authurl=swift_config['authurl'],
-            user=swift_config['user'],
-            key=swift_config['password'],
-            os_options={'region_name': swift_config['region']},
-            tenant_name=swift_config['tenant'],
-            auth_version=2.0
-        )
+        con = _get_swift_connection(swift_config)
 
         chunk_size = int(swift_config.get('chunk_size', 64))
         if chunk_size < 1:
