@@ -109,12 +109,17 @@ NONDATE_LINE = "<span class='%s'>%s\n</span>"
 HTML_RE = re.compile("<html")
 SKIP_LINES = re.compile("</?pre>")
 
+# pre tags mean we're partial html and shouldn't escape
+NO_ESCAPE_START = re.compile("<pre>")
+NO_ESCAPE_FINISH = re.compile("</pre>")
+
 
 class HTMLView(collections.Iterable):
     headers = [('Content-type', 'text/html')]
     should_escape = True
     sent_header = False
     is_html = False
+    no_escape_count = 0
 
     def __init__(self, gen):
         self.gen = gen
@@ -125,9 +130,21 @@ class HTMLView(collections.Iterable):
             self.should_escape = False
 
     def _process_line(self, line):
-        if SKIP_LINES.match(line.line):
-            # pre tags mean we're partial html and shouldn't escape
+        if NO_ESCAPE_START.match(line.line):
+            # Disable escaping starting at this line
             self.should_escape = False
+            # Count the number of times the escape has started in case there
+            # are <pre> (or escape) blocks inside of each other
+            self.no_escape_count += 1
+        elif NO_ESCAPE_FINISH.match(line.line):
+            # Check to see if we've exited the escape stack.
+            self.no_escape_count -= 1
+            if self.no_escape_count == 0:
+                # Re-enable escaping starting at this line. ie we're done in
+                # the escape free zone (eg outside of the pre tags again)
+                self.should_escape = True
+
+        if SKIP_LINES.match(line.line):
             return
 
         if self.should_escape:
