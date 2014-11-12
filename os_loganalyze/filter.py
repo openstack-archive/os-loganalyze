@@ -19,7 +19,7 @@ import re
 
 # which logs support severity
 SUPPORTS_SEV = re.compile(
-    '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah|des)'  # openstack screen logs
+    '(screen-(n-|c-|q-|g-|h-|ir-|ceil|key|sah|des|tr)'  # openstack screen logs
     '|tempest\.txt|syslog)')  # other things we understand
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
