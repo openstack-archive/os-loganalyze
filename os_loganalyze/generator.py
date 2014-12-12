@@ -187,12 +187,26 @@ def get(environ, root_path, config=None):
             logpath, openhook=fileinput.hook_compressed)
         file_headers.update(util.get_headers_for_file(logpath))
     else:
-        resp_headers, flines_generator = get_swift_line_generator(logname,
-                                                                  config)
-        if not flines_generator:
-            logname = os.path.join(logname, 'index.html')
-            resp_headers, flines_generator = get_swift_line_generator(logname,
-                                                                      config)
+        # NOTE(jhesketh): If the requested URL ends in a trailing slash we
+        # assume that this is meaning to load an index.html from our pseudo
+        # filesystem. This means we should't store objects with a trailing
+        # slash in their name as os-loganalzye won't load them.
+        if logname[-1] == '/':
+            resp_headers, flines_generator = get_swift_line_generator(
+                os.path.join(logname, 'index.html'), config)
+            if not flines_generator:
+                # Maybe our assumption was wrong, lets go back to trying the
+                # original object name.
+                resp_headers, flines_generator = get_swift_line_generator(
+                    logname, config)
+        else:
+            resp_headers, flines_generator = get_swift_line_generator(
+                logname, config)
+            if not flines_generator:
+                # The object doesn't exist. Try again appending index.html
+                logname = os.path.join(logname, 'index.html')
+                resp_headers, flines_generator = get_swift_line_generator(
+                    logname, config)
         file_headers.update(resp_headers)
 
     if not flines_generator:
