@@ -23,7 +23,7 @@ SUPPORTS_SEV = re.compile(
     '|(keystone|tempest)\.txt|syslog)')  # other things we understand
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
-DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3})?'
+DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
 
 OSLO_LOGMATCH = '^(?P<date>%s)(?P<line>(?P<pid> \d+)? (?P<status>%s).*)' % \
