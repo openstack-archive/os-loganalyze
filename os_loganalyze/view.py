@@ -106,7 +106,7 @@ highlight_by_hash();
 DATE_LINE = ("<span class='%s %s'><a name='%s' class='date' href='#%s'>"
              "%s</a>%s\n</span>")
 NONDATE_LINE = "<span class='%s'>%s\n</span>"
-HTML_RE = re.compile("<html")
+HTML_RE = re.compile("<(!doctype )?html", re.IGNORECASE)
 SKIP_LINES = re.compile("</?pre>")
 
 # pre tags mean we're partial html and shouldn't escape
