@@ -19,7 +19,27 @@ Test the ability to convert files into wsgi generators
 """
 
 
+from os_loganalyze import filter as flt
 from os_loganalyze.tests import base
+
+
+class TestSupportsSevRegex(base.TestCase):
+    def test_matching(self):
+        def yes(fname):
+            self.assertIsNotNone(flt.SUPPORTS_SEV.search(fname),
+                                 "%s should have matched" % fname)
+
+        def no(fname):
+            self.assertIsNone(flt.SUPPORTS_SEV.search(fname),
+                              "%s should not have matched" % fname)
+
+        yes("n-api.txt.gz")
+        yes("c-vol.txt.gz")
+        yes("tempest.txt")
+        # this specific bug was hit previously
+        no("check/gate-horizon-python27/1dba20d/console.html")
+        # NOTE(sdague): if we ever get edge conditions in the future,
+        # please add checks in here.
 
 
 class TestFilters(base.TestCase):

@@ -19,8 +19,9 @@ import re
 
 # which logs support severity
 SUPPORTS_SEV = re.compile(
-    '((screen-)?(n-|c-|q-|g-|h-|ir-|ceil|key|sah|des|tr)'  # openstack logs
-    '|(keystone|tempest)\.txt|syslog)')  # other things we understand
+    r'\b'  # this uses an re.search so anchor the string
+    r'((screen-)?(n-|c-|q-|g-|h-|ir-|ceil|key|sah|des|tr)'  # openstack logs
+    r'|(keystone|tempest)\.txt|syslog)')  # other things we understand
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
