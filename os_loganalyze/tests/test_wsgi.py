@@ -20,6 +20,8 @@ Test the ability to convert files into wsgi generators
 
 import types
 
+import swiftclient
+
 from os_loganalyze.tests import base
 import os_loganalyze.wsgi as log_wsgi
 
@@ -70,43 +72,10 @@ def compute_total(level, counts):
     return total
 
 
-class BasicTestsMixin(object):
-    def test_invalid_file(self):
-        gen = log_wsgi.application(
-            self.fake_env(), self._start_response)
-        self.assertEqual(gen, ['Invalid file url'])
+class TestWsgiDisk(base.TestCase):
+    """Test loading files from samples on disk."""
 
-    def test_file_not_found(self):
-        gen = log_wsgi.application(
-            self.fake_env(PATH_INFO='/htmlify/foo.txt'),
-            self._start_response)
-        self.assertEqual(gen, ['File Not Found'])
-
-    def test_plain_text(self):
-        gen = self.get_generator('screen-c-api.txt.gz', html=False)
-        self.assertEqual(type(gen), types.GeneratorType)
-
-        first = gen.next()
-        self.assertIn(
-            '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
-            first)
-
-    def test_html_gen(self):
-        gen = self.get_generator('screen-c-api.txt.gz')
-        first = gen.next()
-        self.assertIn('<html>', first)
-
-    def test_plain_non_compressed(self):
-        gen = self.get_generator('screen-c-api.txt', html=False)
-        self.assertEqual(type(gen), types.GeneratorType)
-
-        first = gen.next()
-        self.assertIn(
-            '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
-            first)
-
-
-class KnownFilesMixin(object):
+    # counts for known files for testing
     files = {
         'screen-c-api.txt.gz': {
             'TOTAL': 3695,
@@ -158,14 +127,67 @@ class KnownFilesMixin(object):
 
                 self.assertEqual(counts['TOTAL'], total)
 
+    def test_invalid_file(self):
+        gen = log_wsgi.application(
+            self.fake_env(), self._start_response)
+        self.assertEqual(gen, ['Invalid file url'])
 
-class TestWsgiDisk(base.TestCase, BasicTestsMixin, KnownFilesMixin):
-    """Test loading files from samples on disk."""
-    pass
+    def test_file_not_found(self):
+        gen = log_wsgi.application(
+            self.fake_env(PATH_INFO='/htmlify/foo.txt'),
+            self._start_response)
+        self.assertEqual(gen, ['File Not Found'])
+
+    def test_plain_text(self):
+        gen = self.get_generator('screen-c-api.txt.gz', html=False)
+        self.assertEqual(type(gen), types.GeneratorType)
+
+        first = gen.next()
+        self.assertIn(
+            '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
+            first)
+
+    def test_html_gen(self):
+        gen = self.get_generator('screen-c-api.txt.gz')
+        first = gen.next()
+        self.assertIn('<html>', first)
+
+    def test_plain_non_compressed(self):
+        gen = self.get_generator('screen-c-api.txt', html=False)
+        self.assertEqual(type(gen), types.GeneratorType)
+
+        first = gen.next()
+        self.assertIn(
+            '+ ln -sf /opt/stack/new/screen-logs/screen-c-api.2013-09-27-1815',
+            first)
 
 
-class TestWsgiSwift(base.TestSwiftFiles, BasicTestsMixin, KnownFilesMixin):
+class TestWsgiSwift(TestWsgiDisk):
     """Test loading files from swift."""
+    def setUp(self):
+        def fake_get_object(self, container, name, resp_chunk_size=None):
+            if resp_chunk_size:
+
+                def _object_body():
+                    with open(base.samples_path('samples') + name) as f:
+
+                        buf = f.read(resp_chunk_size)
+                        while buf:
+                            yield buf
+                            buf = f.read(resp_chunk_size)
+
+                object_body = _object_body()
+            else:
+                with open(base.samples_path('samples') + name) as f:
+                    object_body = f.read()
+            return [], object_body
+
+        swiftclient.client.Connection.get_object = fake_get_object
+        super(TestWsgiSwift, self).setUp()
+
+        # Set the samples directory to somewhere non-existent so that swift
+        # is checked for files
+        self.samples_directory = 'non-existent'
 
     def test_compare_disk_to_swift_html(self):
         """Compare loading logs from disk vs swift."""

@@ -21,7 +21,6 @@ import urllib
 from wsgiref import util
 
 import fixtures
-import swiftclient
 import testtools
 
 import os_loganalyze.wsgi as log_wsgi
@@ -105,33 +104,3 @@ class TestCase(testtools.TestCase):
             wsgi_config=self.wsgi_config_file)
 
         return iter(gen)
-
-
-class TestSwiftFiles(TestCase):
-
-    """Test case with fake swift object."""
-
-    def setUp(self):
-        def fake_get_object(self, container, name, resp_chunk_size=None):
-            if resp_chunk_size:
-
-                def _object_body():
-                    with open(samples_path('samples') + name) as f:
-
-                        buf = f.read(resp_chunk_size)
-                        while buf:
-                            yield buf
-                            buf = f.read(resp_chunk_size)
-
-                object_body = _object_body()
-            else:
-                with open(samples_path('samples') + name) as f:
-                    object_body = f.read()
-            return [], object_body
-
-        swiftclient.client.Connection.get_object = fake_get_object
-        super(TestSwiftFiles, self).setUp()
-
-        # Set the samples directory to somewhere non-existent so that swift
-        # is checked for files
-        self.samples_directory = 'non-existent'
