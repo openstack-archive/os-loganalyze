@@ -37,6 +37,39 @@ SEVS = {
 SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
 
 
+# add up all the counts from a generator
+def count_types(gen):
+    counts = {
+        'TOTAL': 0,
+        'DEBUG': 0,
+        'INFO': 0,
+        'WARNING': 0,
+        'ERROR': 0,
+        'TRACE': 0,
+        'AUDIT': 0}
+
+    laststatus = None
+    for line in gen:
+        counts['TOTAL'] = counts['TOTAL'] + 1
+        for key in counts:
+            if ' %s ' % key in line:
+                laststatus = key
+                continue
+        if laststatus:
+            counts[laststatus] = counts[laststatus] + 1
+    return counts
+
+
+# count up all the lines at all levels
+def compute_total(level, counts):
+    total = 0
+    for l in SEVS_SEQ[SEVS[level]:]:
+        # so that we don't need to know all the levels
+        if counts.get(l):
+            total = total + counts[l]
+    return total
+
+
 class BasicTestsMixin(object):
     def test_invalid_file(self):
         gen = log_wsgi.application(
@@ -104,42 +137,11 @@ class KnownFilesMixin(object):
             },
         }
 
-    def count_types(self, gen):
-        counts = {
-            'TOTAL': 0,
-            'DEBUG': 0,
-            'INFO': 0,
-            'WARNING': 0,
-            'ERROR': 0,
-            'TRACE': 0,
-            'AUDIT': 0}
-
-        laststatus = None
-        for line in gen:
-            counts['TOTAL'] = counts['TOTAL'] + 1
-            for key in counts:
-                if ' %s ' % key in line:
-                    laststatus = key
-                    continue
-            if laststatus:
-                counts[laststatus] = counts[laststatus] + 1
-        return counts
-
-    def compute_total(self, level, fname):
-        # todo, be more clever
-        counts = self.files[fname]
-        total = 0
-        for l in SEVS_SEQ[SEVS[level]:]:
-            # so that we don't need to know all the levels
-            if counts.get(l):
-                total = total + counts[l]
-        return total
-
     def test_pass_through_all(self):
         for fname in self.files:
             gen = self.get_generator(fname, html=False)
 
-            counts = self.count_types(gen)
+            counts = count_types(gen)
             self.assertEqual(counts['TOTAL'], self.files[fname]['TOTAL'])
 
     def test_pass_through_at_levels(self):
@@ -150,8 +152,8 @@ class KnownFilesMixin(object):
 
                 gen = self.get_generator(fname, level=level, html=False)
 
-                counts = self.count_types(gen)
-                total = self.compute_total(level, fname)
+                counts = count_types(gen)
+                total = compute_total(level, self.files[fname])
                 print(fname, counts)
 
                 self.assertEqual(counts['TOTAL'], total)
