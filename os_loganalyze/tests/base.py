@@ -37,9 +37,10 @@ def samples_path(append_folder='samples'):
     escape our root path, we need to actually create a full abs path
     for the tests, otherwise the sample files aren't findable.
     """
-    return (os.path.normpath(
-        os.path.join(os.getcwd(), 'os_loganalyze/tests', append_folder)) +
-        os.sep)
+    return os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            'samples')) + os.sep
 
 
 class TestCase(testtools.TestCase):
