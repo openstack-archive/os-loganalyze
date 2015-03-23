@@ -33,11 +33,12 @@ class TestSupportsSevRegex(base.TestCase):
             self.assertIsNone(flt.SUPPORTS_SEV.search(fname),
                               "%s should not have matched" % fname)
 
-        yes("n-api.txt.gz")
-        yes("c-vol.txt.gz")
-        yes("tempest.txt")
+        yes("/n-api.txt.gz")
+        yes("/c-vol.txt.gz")
+        yes("/tempest.txt")
         # this specific bug was hit previously
         no("check/gate-horizon-python27/1dba20d/console.html")
+        no("check/gate-tempest-dsvm-trove/c5950fc/console.html")
         # NOTE(sdague): if we ever get edge conditions in the future,
         # please add checks in here.
 

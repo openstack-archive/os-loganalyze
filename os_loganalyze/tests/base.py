@@ -39,7 +39,7 @@ def samples_path(append_folder='samples'):
     return os.path.abspath(
         os.path.join(
             os.path.dirname(__file__),
-            'samples')) + os.sep
+            append_folder)) + os.sep
 
 
 class TestCase(testtools.TestCase):
@@ -83,7 +83,7 @@ class TestCase(testtools.TestCase):
 
     def get_generator(self, fname, level=None, html=True,
                       limit=None, source=None):
-        kwargs = {'PATH_INFO': '/htmlify/%s' % fname}
+        kwargs = {'PATH_INFO': '/htmlify/samples/%s' % fname}
         qs = {}
         if level:
             qs['level'] = level
@@ -100,7 +100,7 @@ class TestCase(testtools.TestCase):
         gen = log_wsgi.application(
             self.fake_env(**kwargs),
             self._start_response,
-            root_path=samples_path(self.samples_directory),
+            root_path=samples_path(''),
             wsgi_config=self.wsgi_config_file)
 
         return iter(gen)

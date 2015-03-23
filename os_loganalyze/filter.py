@@ -19,7 +19,7 @@ import re
 
 # which logs support severity
 SUPPORTS_SEV = re.compile(
-    r'\b'  # this uses an re.search so anchor the string
+    r'/'  # this uses an re.search so anchor the string
     r'((screen-)?(n-|c-|q-|g-|h-|ir-|ceil|key|sah|des|tr)'  # openstack logs
     r'|(keystone|tempest)\.txt|syslog)')  # other things we understand
 
