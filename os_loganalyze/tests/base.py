@@ -83,7 +83,8 @@ class TestCase(testtools.TestCase):
 
     def get_generator(self, fname, level=None, html=True,
                       limit=None, source=None):
-        kwargs = {'PATH_INFO': '/htmlify/samples/%s' % fname}
+        kwargs = {'PATH_INFO': '/htmlify/%s/%s' % (self.samples_directory,
+                                                   fname)}
         qs = {}
         if level:
             qs['level'] = level

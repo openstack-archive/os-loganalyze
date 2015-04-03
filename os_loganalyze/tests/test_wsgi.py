@@ -20,7 +20,8 @@ Test the ability to convert files into wsgi generators
 
 import types
 
-import swiftclient
+import fixtures
+import swiftclient  # noqa needed for monkeypatching
 
 from os_loganalyze.tests import base
 import os_loganalyze.wsgi as log_wsgi
@@ -165,24 +166,30 @@ class TestWsgiDisk(base.TestCase):
 class TestWsgiSwift(TestWsgiDisk):
     """Test loading files from swift."""
     def setUp(self):
-        def fake_get_object(self, container, name, resp_chunk_size=None):
-            if resp_chunk_size:
+        class fake_swiftclient(object):
+            def __init__(self, *args, **kwargs):
+                pass
 
-                def _object_body():
-                    with open(base.samples_path('samples') + name) as f:
+            def get_object(self, container, name, resp_chunk_size=None):
+                name = name[len('non-existent'):]
+                if resp_chunk_size:
 
-                        buf = f.read(resp_chunk_size)
-                        while buf:
-                            yield buf
+                    def _object_body():
+                        with open(base.samples_path('samples') + name) as f:
+
                             buf = f.read(resp_chunk_size)
+                            while buf:
+                                yield buf
+                                buf = f.read(resp_chunk_size)
 
-                object_body = _object_body()
-            else:
-                with open(base.samples_path('samples') + name) as f:
-                    object_body = f.read()
-            return [], object_body
+                    object_body = _object_body()
+                else:
+                    with open(base.samples_path('samples') + name) as f:
+                        object_body = f.read()
+                return [], object_body
 
-        swiftclient.client.Connection.get_object = fake_get_object
+        self.useFixture(fixtures.MonkeyPatch(
+            'swiftclient.client.Connection', fake_swiftclient))
         super(TestWsgiSwift, self).setUp()
 
         # Set the samples directory to somewhere non-existent so that swift
