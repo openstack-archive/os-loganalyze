@@ -213,16 +213,26 @@ class PassthroughView(collections.Iterable):
 
 def get_view_generator(filter_generator, environ, root_path, config):
     """Return the view to use as per the config."""
-    if config.has_section('general'):
-        if config.has_option('general', 'view'):
-            set_view = config.get('general', 'view')
-            if set_view.lower() in ['htmlview', 'html']:
-                return HTMLView(filter_generator)
-            elif set_view.lower() in ['textview', 'text']:
-                return TextView(filter_generator)
-            elif set_view.lower() in ['passthroughview', 'passthrough']:
-                return PassthroughView(filter_generator)
+    # Check file specific conditions first
+    view_selected = util.get_file_conditions('view',
+                                             filter_generator.file_generator,
+                                             environ, root_path, config)
 
+    # Otherwise use the defaults in the config
+    if not view_selected:
+        if config.has_section('general'):
+            if config.has_option('general', 'view'):
+                view_selected = config.get('general', 'view')
+
+    if view_selected:
+        if view_selected.lower() in ['htmlview', 'html']:
+            return HTMLView(filter_generator)
+        elif view_selected.lower() in ['textview', 'text']:
+            return TextView(filter_generator)
+        elif view_selected.lower() in ['passthroughview', 'passthrough']:
+            return PassthroughView(filter_generator)
+
+    # Otherwise guess
     if util.use_passthrough_view(filter_generator.file_generator.file_headers):
         return PassthroughView(filter_generator)
     elif util.should_be_html(environ):

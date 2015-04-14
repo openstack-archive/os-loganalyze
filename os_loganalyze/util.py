@@ -15,10 +15,13 @@
 # under the License.
 
 import cgi
+import logging
 import os
+import re
 import time
 
 import magic
+import yaml
 
 
 def parse_param(env, name, default=None):
@@ -104,3 +107,31 @@ def use_passthrough_view(file_headers):
             if os.path.splitext(filename)[1] in ['.txt', '.html']:
                 return False
     return True
+
+
+def load_file_conditions(config):
+    if config.has_section('general'):
+        if config.has_option('general', 'file_conditions'):
+            try:
+                with open(config.get('general', 'file_conditions'), 'r') as f:
+                    fm = yaml.safe_load(f)
+                    return fm.get('conditions', [])
+            except Exception:
+                logging.warn("Failed to load file conditions")
+    return []
+
+
+def get_file_conditions(item, file_generator, environ, root_path, config):
+    """Get the matching item for the given file."""
+    # Also take in environ and root_path if in the future we want to match
+    # on other conditions
+
+    # We return the first match or None if nothing is found
+
+    conditions = load_file_conditions(config)
+    for cond in conditions:
+        if 'filename_pattern' in cond and item in cond:
+            if re.match(cond['filename_pattern'], file_generator.logname):
+                return cond[item]
+
+    return None

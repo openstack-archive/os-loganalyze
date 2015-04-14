@@ -195,6 +195,28 @@ class TestWsgiDisk(base.TestCase):
         first = gen.next()
         self.assertNotIn('<html>', first)
 
+    def test_file_conditions(self):
+        self.wsgi_config_file = (base.samples_path('samples') +
+                                 'wsgi_file_conditions.conf')
+        # Check we are matching and setting the HTML filter
+        gen = self.get_generator('devstacklog.txt.gz')
+
+        first = gen.next()
+        self.assertIn('<html>', first)
+
+        # Check for simple.html we don't have HTML but do have date lines
+        gen = self.get_generator('simple.txt')
+
+        first = gen.next()
+        self.assertIn('2013-09-27 18:22:35.392 testing 123', first)
+
+        # Test images go through the passthrough filter
+        gen = self.get_generator('openstack_logo.png')
+        first = gen.next()
+        self.assertNotIn('html', first)
+        with open(base.samples_path('samples') + 'openstack_logo.png') as f:
+            self.assertEqual(first, f.readline())
+
 
 class TestWsgiSwift(TestWsgiDisk):
     """Test loading files from swift."""

@@ -15,8 +15,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import ConfigParser
 import os
 import os.path
+import tempfile
 import urllib
 from wsgiref import util
 
@@ -80,6 +82,21 @@ class TestCase(testtools.TestCase):
         util.setup_testing_defaults(environ)
         return environ
 
+    def _create_wsgi_config_file_for_job(self):
+        # We need to create a new config file for each job run to have the
+        # opportunity to modify paths to the tests samples dir
+        config = ConfigParser.ConfigParser()
+        config.read(os.path.expanduser(self.wsgi_config_file))
+
+        if config.has_section('general'):
+            if config.has_option('general', 'file_conditions'):
+                config.set(
+                    'general', 'file_conditions',
+                    samples_path() + config.get('general', 'file_conditions'))
+        fd, filename = tempfile.mkstemp()
+        config.write(os.fdopen(fd, 'w'))
+        return filename
+
     def get_generator(self, fname, level=None, html=True,
                       limit=None, source=None):
         kwargs = {'PATH_INFO': '/htmlify/%s/%s' % (self.samples_directory,
@@ -101,6 +118,6 @@ class TestCase(testtools.TestCase):
             self.fake_env(**kwargs),
             self._start_response,
             root_path=samples_path(''),
-            wsgi_config=self.wsgi_config_file)
+            wsgi_config=self._create_wsgi_config_file_for_job())
 
         return iter(gen)

@@ -161,17 +161,26 @@ class NoFilter(object):
 def get_filter_generator(file_generator, environ, root_path, config):
     """Return the filter to use as per the config."""
 
+    # Check file specific conditions first
+    filter_selected = util.get_file_conditions('filter', file_generator,
+                                               environ, root_path, config)
+
+    # Otherwise use the defaults in the config
+    if not filter_selected:
+        if config.has_section('general'):
+            if config.has_option('general', 'filter'):
+                filter_selected = config.get('general', 'filter')
+
     minsev = util.parse_param(environ, 'level', default="NONE")
     limit = util.parse_param(environ, 'limit')
 
-    if config.has_section('general'):
-        if config.has_option('general', 'filter'):
-            set_filter = config.get('general', 'filter')
-            if set_filter.lower() in ['sevfilter', 'sev']:
-                return SevFilter(file_generator, minsev, limit)
-            elif set_filter.lower() in ['nofilter', 'no']:
-                return NoFilter(file_generator)
+    if filter_selected:
+        if filter_selected.lower() in ['sevfilter', 'sev']:
+            return SevFilter(file_generator, minsev, limit)
+        elif filter_selected.lower() in ['nofilter', 'no']:
+            return NoFilter(file_generator)
 
+    # Otherwise guess
     if util.use_passthrough_view(file_generator.file_headers):
         return NoFilter(file_generator)
 
