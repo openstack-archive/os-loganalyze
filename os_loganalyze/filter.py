@@ -17,6 +17,8 @@
 
 import re
 
+import os_loganalyze.util as util
+
 # which logs support severity
 SUPPORTS_SEV = re.compile(
     r'/'  # this uses an re.search so anchor the string
@@ -94,7 +96,7 @@ class LogLine(object):
         self.line = line.rstrip()
 
 
-class Filter(object):
+class SevFilter(object):
 
     def __init__(self, file_generator, minsev="NONE", limit=None):
         self.minsev = minsev
@@ -136,3 +138,41 @@ class Filter(object):
         """
         minsev = self.minsev
         return SEVS.get(sev, 0) < SEVS.get(minsev, 0)
+
+
+class Line(object):
+    date = ''
+
+    def __init__(self, line):
+        self.line = line
+
+
+class NoFilter(object):
+    supports_sev = False
+
+    def __init__(self, file_generator):
+        self.file_generator = file_generator
+
+    def __iter__(self):
+        for line in self.file_generator:
+            yield Line(line)
+
+
+def get_filter_generator(file_generator, environ, root_path, config):
+    """Return the filter to use as per the config."""
+
+    minsev = util.parse_param(environ, 'level', default="NONE")
+    limit = util.parse_param(environ, 'limit')
+
+    if config.has_section('general'):
+        if config.has_option('general', 'filter'):
+            set_filter = config.get('general', 'filter')
+            if set_filter.lower() in ['sevfilter', 'sev']:
+                return SevFilter(file_generator, minsev, limit)
+            elif set_filter.lower() in ['nofilter', 'no']:
+                return NoFilter(file_generator)
+
+    if util.use_passthrough_view(file_generator.file_headers):
+        return NoFilter(file_generator)
+
+    return SevFilter(file_generator, minsev, limit)

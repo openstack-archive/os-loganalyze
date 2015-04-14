@@ -17,6 +17,8 @@ import cgi
 import collections
 import re
 
+import os_loganalyze.util as util
+
 HTML_HEADER = """<html>
 <head>
 <style>
@@ -121,8 +123,8 @@ class HTMLView(collections.Iterable):
     is_html = False
     no_escape_count = 0
 
-    def __init__(self, gen):
-        self.gen = gen
+    def __init__(self, filter_generator):
+        self.filter_generator = filter_generator
 
     def _discover_html(self, line):
         self.is_html = HTML_RE.match(line)
@@ -161,13 +163,13 @@ class HTMLView(collections.Iterable):
         return newline
 
     def __iter__(self):
-        igen = (x for x in self.gen)
+        igen = (x for x in self.filter_generator)
         first_line = next(igen)
         self._discover_html(first_line.line)
 
         if not self.is_html:
             header = HTML_HEADER
-            if self.gen.supports_sev:
+            if self.filter_generator.supports_sev:
                 header += HTML_HEADER_SEV
             header += HTML_HEADER_BODY
             yield header
@@ -188,22 +190,42 @@ class HTMLView(collections.Iterable):
 class TextView(collections.Iterable):
     headers = [('Content-type', 'text/plain')]
 
-    def __init__(self, gen):
-        self.gen = gen
+    def __init__(self, filter_generator):
+        self.filter_generator = filter_generator
 
     def __iter__(self):
-        for line in self.gen:
+        for line in self.filter_generator:
             yield line.date + line.line + "\n"
 
 
 class PassthroughView(collections.Iterable):
     headers = []
 
-    def __init__(self, gen):
-        self.gen = gen
-        for hn, hv in self.gen.file_headers.items():
-            self.headers.append((hn, hv))
+    def __init__(self, filter_generator):
+        self.filter_generator = filter_generator
+        for k, v in self.filter_generator.file_generator.file_headers.items():
+            self.headers.append((k, v))
 
     def __iter__(self):
-        for line in self.gen:
-            yield line
+        for line in self.filter_generator:
+            yield line.line
+
+
+def get_view_generator(filter_generator, environ, root_path, config):
+    """Return the view to use as per the config."""
+    if config.has_section('general'):
+        if config.has_option('general', 'view'):
+            set_view = config.get('general', 'view')
+            if set_view.lower() in ['htmlview', 'html']:
+                return HTMLView(filter_generator)
+            elif set_view.lower() in ['textview', 'text']:
+                return TextView(filter_generator)
+            elif set_view.lower() in ['passthroughview', 'passthrough']:
+                return PassthroughView(filter_generator)
+
+    if util.use_passthrough_view(filter_generator.file_generator.file_headers):
+        return PassthroughView(filter_generator)
+    elif util.should_be_html(environ):
+        return HTMLView(filter_generator)
+    else:
+        return TextView(filter_generator)
