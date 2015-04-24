@@ -161,8 +161,7 @@ class HTMLView(collections.Iterable):
         return newline
 
     def __iter__(self):
-        igen = (x for x in self.gen)
-        first_line = next(igen)
+        first_line = next(x for x in self.gen)
         self._discover_html(first_line.line)
 
         if not self.is_html:
@@ -176,7 +175,7 @@ class HTMLView(collections.Iterable):
         if first:
             yield first
 
-        for line in igen:
+        for line in self.gen:
             newline = self._process_line(line)
             if newline:
                 yield newline
@@ -199,9 +198,9 @@ class TextView(collections.Iterable):
 class PassthroughView(collections.Iterable):
     headers = []
 
-    def __init__(self, gen):
+    def __init__(self, gen, file_headers):
         self.gen = gen
-        for hn, hv in self.gen.file_headers.items():
+        for hn, hv in file_headers.items():
             self.headers.append((hn, hv))
 
     def __iter__(self):

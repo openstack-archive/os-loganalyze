@@ -96,11 +96,11 @@ class LogLine(object):
 
 class Filter(object):
 
-    def __init__(self, file_generator, minsev="NONE", limit=None):
+    def __init__(self, fname, generator, minsev="NONE", limit=None):
         self.minsev = minsev
-        self.file_generator = file_generator
-        self.supports_sev = \
-            SUPPORTS_SEV.search(file_generator.logname) is not None
+        self.gen = generator
+        self.supports_sev = SUPPORTS_SEV.search(fname) is not None
+        self.fname = fname
         self.limit = limit
         self.strip_control = False
 
@@ -110,9 +110,9 @@ class Filter(object):
     def __iter__(self):
         old_sev = "NONE"
         lineno = 1
-        for line in self.file_generator:
+        for line in self.gen:
             # bail early for limits
-            if self.limit and lineno > int(self.limit):
+            if self.limit and lineno >= int(self.limit):
                 raise StopIteration()
             # strip control chars in case the console is ascii colored
             if self.strip_control:

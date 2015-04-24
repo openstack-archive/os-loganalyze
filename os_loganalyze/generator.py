@@ -16,7 +16,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import collections
 import fileinput
 import os.path
 import re
@@ -105,99 +104,73 @@ def _get_swift_connection(swift_config):
 _get_swift_connection.con = None
 
 
-class SwiftIterableBuffer(collections.Iterable):
-    file_headers = {}
+def get_swift_line_generator(logname, config):
+    resp_headers = {}
+    if not config.has_section('swift'):
+        sys.stderr.write('Not configured to use swift..\n')
+        sys.stderr.write('logname: %s\n' % logname)
+        return resp_headers, None
 
-    def __init__(self, logname, config):
-        self.logname = logname
-        self.resp_headers = {}
-        self.obj = None
-        self.file_headers['filename'] = logname
+    try:
+        swift_config = dict(config.items('swift'))
+        con = _get_swift_connection(swift_config)
 
-        if not config.has_section('swift'):
-            sys.stderr.write('Not configured to use swift..\n')
-            sys.stderr.write('logname: %s\n' % logname)
-        else:
-            try:
-                swift_config = dict(config.items('swift'))
-                # NOTE(jhesketh): While _get_siwft_connection seems like it
-                # should be part of this class we actually still need it
-                # outside to maintain the connection across multiple objects.
-                # Each SwiftIterableBuffer is a new object request, not
-                # necessarily a new swift connection (hopefully we can reuse
-                # connections). I think the place to put the get connection
-                # in the future would be in the server.py (todo).
-                con = _get_swift_connection(swift_config)
+        chunk_size = int(swift_config.get('chunk_size', 64))
+        if chunk_size < 1:
+            chunk_size = None
 
-                chunk_size = int(swift_config.get('chunk_size', 64))
-                if chunk_size < 1:
-                    chunk_size = None
+        resp_headers, obj = con.get_object(
+            swift_config['container'], logname,
+            resp_chunk_size=chunk_size)
 
-                self.resp_headers, self.obj = con.get_object(
-                    swift_config['container'], logname,
-                    resp_chunk_size=chunk_size)
-                self.file_headers.update(self.resp_headers)
-            except Exception:
-                import traceback
-                sys.stderr.write("Error fetching from swift.\n")
-                sys.stderr.write('logname: %s\n' % logname)
-                traceback.print_exc()
+        def line_generator():
+            ext = os.path.splitext(logname)[1]
+            if ext == '.gz':
+                # Set up a decompression object assuming the deflate
+                # compression algorithm was used
+                d = zlib.decompressobj(16 + zlib.MAX_WBITS)
 
-    def __iter__(self):
-        ext = os.path.splitext(self.logname)[1]
-        if ext == '.gz':
-            # Set up a decompression object assuming the deflate
-            # compression algorithm was used
-            d = zlib.decompressobj(16 + zlib.MAX_WBITS)
-
-        if isinstance(self.obj, types.GeneratorType):
-            buf = next(self.obj)
-            partial = ''
-            while buf:
+            if isinstance(obj, types.GeneratorType):
+                buf = next(obj)
+                partial = ''
+                while buf:
+                    if ext == '.gz':
+                        string = partial + d.decompress(buf)
+                    else:
+                        string = partial + buf
+                    split = string.split('\n')
+                    for line in split[:-1]:
+                        yield line + '\n'
+                    partial = split[-1]
+                    try:
+                        buf = next(obj)
+                    except StopIteration:
+                        break
+                if partial != '':
+                    yield partial
+            else:
+                output = obj
                 if ext == '.gz':
-                    string = partial + d.decompress(buf)
-                else:
-                    string = partial + buf
-                split = string.split('\n')
+                    output = d.decompress(output)
+
+                split = output.split('\n')
                 for line in split[:-1]:
                     yield line + '\n'
                 partial = split[-1]
-                try:
-                    buf = next(self.obj)
-                except StopIteration:
-                    break
-            if partial != '':
-                yield partial
-        else:
-            output = self.obj
-            if ext == '.gz':
-                output = d.decompress(output)
+                if partial != '':
+                    yield partial
 
-            split = output.split('\n')
-            for line in split[:-1]:
-                yield line + '\n'
-            partial = split[-1]
-            if partial != '':
-                yield partial
+        return resp_headers, line_generator()
+
+    except Exception:
+        import traceback
+        sys.stderr.write("Error fetching from swift.\n")
+        sys.stderr.write('logname: %s\n' % logname)
+        traceback.print_exc()
+        return resp_headers, None
 
 
-class DiskIterableBuffer(collections.Iterable):
-    file_headers = {}
-
-    def __init__(self, logname, logpath, config):
-        self.logname = logname
-        self.logpath = logpath
-        self.resp_headers = {}
-        self.obj = fileinput.FileInput(self.logpath,
-                                       openhook=fileinput.hook_compressed)
-        self.file_headers['filename'] = logname
-        self.file_headers.update(util.get_headers_for_file(logpath))
-
-    def __iter__(self):
-        return self.obj
-
-
-def get_file_generator(environ, root_path, config=None):
+def get(environ, root_path, config=None):
     logname = log_name(environ)
     logpath = safe_path(root_path, logname)
     file_headers = {}
@@ -205,19 +178,24 @@ def get_file_generator(environ, root_path, config=None):
         raise UnsafePath()
     file_headers['filename'] = os.path.basename(logpath)
 
-    file_generator = None
+    flines_generator = None
     # if we want swift only, we'll skip processing files
     use_files = (util.parse_param(environ, 'source', default='all')
                  != 'swift')
     if use_files and does_file_exist(logpath):
-        file_generator = DiskIterableBuffer(logname, logpath, config)
+        flines_generator = fileinput.FileInput(
+            logpath, openhook=fileinput.hook_compressed)
+        file_headers.update(util.get_headers_for_file(logpath))
     else:
-        file_generator = SwiftIterableBuffer(logname, config)
-        if not file_generator.obj:
+        resp_headers, flines_generator = get_swift_line_generator(logname,
+                                                                  config)
+        if not flines_generator:
             logname = os.path.join(logname, 'index.html')
-            file_generator = SwiftIterableBuffer(logname, config)
+            resp_headers, flines_generator = get_swift_line_generator(logname,
+                                                                      config)
+        file_headers.update(resp_headers)
 
-    if not file_generator.obj:
+    if not flines_generator:
         raise NoSuchFile()
 
-    return file_generator
+    return logname, flines_generator, file_headers

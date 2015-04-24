@@ -99,7 +99,8 @@ def application(environ, start_response, root_path=None,
     status = '200 OK'
 
     try:
-        file_generator = osgen.get_file_generator(environ, root_path, config)
+        logname, flines_generator, file_headers = osgen.get(environ, root_path,
+                                                            config)
     except osgen.UnsafePath:
         status = '400 Bad Request'
         response_headers = [('Content-type', 'text/plain')]
@@ -111,21 +112,23 @@ def application(environ, start_response, root_path=None,
         start_response(status, response_headers)
         return ['File Not Found']
 
-    if use_passthrough_view(file_generator.file_headers):
-        view_generator = osview.PassthroughView(file_generator)
+    if use_passthrough_view(file_headers):
+        generator = osview.PassthroughView(flines_generator,
+                                           file_headers)
     else:
         minsev = util.parse_param(environ, 'level', default="NONE")
         limit = util.parse_param(environ, 'limit')
-        flines_generator = osfilter.Filter(file_generator, minsev, limit)
+        flines_generator = osfilter.Filter(
+            logname, flines_generator, minsev, limit)
         if environ.get('OS_LOGANALYZE_STRIP', None):
             flines_generator.strip_control = True
         if should_be_html(environ):
-            view_generator = osview.HTMLView(flines_generator)
+            generator = osview.HTMLView(flines_generator)
         else:
-            view_generator = osview.TextView(flines_generator)
+            generator = osview.TextView(flines_generator)
 
-    start_response(status, view_generator.headers)
-    return view_generator
+    start_response(status, generator.headers)
+    return generator
 
 
 # for development purposes, makes it easy to test the filter output
