@@ -36,6 +36,8 @@ if is_service_enabled os_loganalyze; then
         # Perform installation of service source
         echo_summary "Installing os_loganalyze"
         setup_install $OS_LOGANALYZE_DIR
+        sudo mkdir -p $OS_LOGANALYZE_APACHE_DOCUMENTROOT
+        sudo chown www-data:www-data $OS_LOGANALYZE_APACHE_DOCUMENTROOT
 
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         # Configure after the other layer 1 and 2 services have been configured
@@ -45,6 +47,7 @@ if is_service_enabled os_loganalyze; then
         sudo sed -e "
             s/%PORT%/8080/g;
             s/%OS_LOGANALYZE_DIR%/${OS_LOGANALYZE_DIR//\//\\\/}/g;
+            s/%OS_LOGANALYZE_APACHE_DOCUMENTROOT%/${OS_LOGANALYZE_APACHE_DOCUMENTROOT//\//\\\/}/g;
         " -i $(apache_site_config_for os_loganalyze)
 
         enable_apache_site os_loganalyze
