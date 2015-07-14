@@ -1,5 +1,7 @@
 Listen %PORT%
 <VirtualHost *:%PORT%>
+  DocumentRoot %OS_LOGANALYZE_APACHE_DOCUMENTROOT%
+
   # use Apache to compress the results afterwards, to save on the wire
   # it's approx 18x savings of wire traffic to compress. We need to
   # compress by content types that htmlify can produce
