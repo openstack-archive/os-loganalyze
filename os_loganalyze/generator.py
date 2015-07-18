@@ -137,11 +137,14 @@ class SwiftIterableBuffer(collections.Iterable):
                     swift_config['container'], logname,
                     resp_chunk_size=chunk_size)
                 self.file_headers.update(self.resp_headers)
-            except Exception:
-                import traceback
-                sys.stderr.write("Error fetching from swift.\n")
-                sys.stderr.write('logname: %s\n' % logname)
-                traceback.print_exc()
+            except Exception as e:
+                # Only print the traceback if the error was anything but a
+                # 404. File not found errors are handled separately.
+                if 'http_status' not in dir(e) or e.http_status != 404:
+                    import traceback
+                    sys.stderr.write("Error fetching from swift.\n")
+                    sys.stderr.write('logname: %s\n' % logname)
+                    traceback.print_exc()
 
     def __iter__(self):
         ext = os.path.splitext(self.logname)[1]
