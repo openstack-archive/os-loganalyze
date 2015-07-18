@@ -1,0 +1,10 @@
+conditions:
+ - filename_pattern: ^.*\.txt\.gz$
+   filter: SevFilter
+   view: HTMLView
+ - filename_pattern: ^.*\.txt?$
+   filter: SevFilter
+   view: TextView
+ - filename_pattern: ^.*$
+   filter: NoFilter
+   view: PassthroughView
