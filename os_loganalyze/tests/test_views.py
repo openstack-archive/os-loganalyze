@@ -30,8 +30,8 @@ class TestViews(base.TestCase):
         kwargs = {'PATH_INFO': '/htmlify/%s' % fname}
         file_generator = osgen.get_file_generator(self.fake_env(**kwargs),
                                                   root_path)
-        flines_generator = osfilter.Filter(file_generator)
-        return flines_generator
+        filter_generator = osfilter.SevFilter(file_generator)
+        return filter_generator
 
     def test_html_detection(self):
         gen = self.get_generator('sample.html')

@@ -171,6 +171,30 @@ class TestWsgiDisk(base.TestCase):
         with open(base.samples_path('samples') + 'openstack_logo.png') as f:
             self.assertEqual(first, f.readline())
 
+    def test_config_no_filter(self):
+        self.wsgi_config_file = (base.samples_path('samples') +
+                                 'wsgi_plain.conf')
+        # Try to limit the filter to 10 lines, but we should get the full
+        # amount.
+        gen = self.get_generator('devstacklog.txt.gz', limit=10)
+
+        lines = 0
+        for line in gen:
+            lines += 1
+
+        # the lines should actually be 2 + the limit we've asked for
+        # given the header and footer, but we expect to get the full file
+        self.assertNotEqual(12, lines)
+
+    def test_config_passthrough_view(self):
+        self.wsgi_config_file = (base.samples_path('samples') +
+                                 'wsgi_plain.conf')
+        # Check there is no HTML on a file that should otherwise have it
+        gen = self.get_generator('devstacklog.txt.gz')
+
+        first = gen.next()
+        self.assertNotIn('<html>', first)
+
 
 class TestWsgiSwift(TestWsgiDisk):
     """Test loading files from swift."""
