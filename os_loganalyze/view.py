@@ -213,6 +213,9 @@ class PassthroughView(collections.Iterable):
 
 def get_view_generator(filter_generator, environ, root_path, config):
     """Return the view to use as per the config."""
+    # Determine if html is supported by the client if yes then supply html
+    # otherwise fallback to text.
+    supports_html = util.should_be_html(environ)
     # Check file specific conditions first
     view_selected = util.get_file_conditions('view',
                                              filter_generator.file_generator,
@@ -225,7 +228,7 @@ def get_view_generator(filter_generator, environ, root_path, config):
                 view_selected = config.get('general', 'view')
 
     if view_selected:
-        if view_selected.lower() in ['htmlview', 'html']:
+        if view_selected.lower() in ['htmlview', 'html'] and supports_html:
             return HTMLView(filter_generator)
         elif view_selected.lower() in ['textview', 'text']:
             return TextView(filter_generator)
@@ -235,7 +238,7 @@ def get_view_generator(filter_generator, environ, root_path, config):
     # Otherwise guess
     if util.use_passthrough_view(filter_generator.file_generator.file_headers):
         return PassthroughView(filter_generator)
-    elif util.should_be_html(environ):
+    elif supports_html:
         return HTMLView(filter_generator)
     else:
         return TextView(filter_generator)
