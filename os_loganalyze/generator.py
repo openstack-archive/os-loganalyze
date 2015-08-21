@@ -217,8 +217,7 @@ def get_file_generator(environ, root_path, config=None):
     else:
         # NOTE(jhesketh): If the requested URL ends in a trailing slash we
         # assume that this is meaning to load an index.html from our pseudo
-        # filesystem. This means we should't store objects with a trailing
-        # slash in their name as os-loganalzye won't load them.
+        # filesystem and attempt that first.
         if logname[-1] == '/':
             file_generator = SwiftIterableBuffer(
                 os.path.join(logname, 'index.html'), config)
