@@ -104,7 +104,7 @@ def use_passthrough_view(file_headers):
             # download.
             filename = file_headers['filename']
             filename = filename[:-3] if filename[-3:] == '.gz' else filename
-            if os.path.splitext(filename)[1] in ['.txt', '.html']:
+            if os.path.splitext(filename)[1] in ['.txt', '.html', '.log']:
                 return False
     return True
 
