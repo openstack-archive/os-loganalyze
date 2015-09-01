@@ -17,6 +17,7 @@ import cgi
 import collections
 import re
 
+import os_loganalyze.generator as generator
 import os_loganalyze.util as util
 
 HTML_HEADER = """<html>
@@ -117,13 +118,13 @@ NO_ESCAPE_FINISH = re.compile("</pre>")
 
 
 class HTMLView(collections.Iterable):
-    headers = [('Content-type', 'text/html')]
     should_escape = True
     sent_header = False
     is_html = False
     no_escape_count = 0
 
     def __init__(self, filter_generator):
+        self.headers = [('Content-type', 'text/html')]
         self.filter_generator = filter_generator
 
     def _discover_html(self, line):
@@ -188,9 +189,8 @@ class HTMLView(collections.Iterable):
 
 
 class TextView(collections.Iterable):
-    headers = [('Content-type', 'text/plain')]
-
     def __init__(self, filter_generator):
+        self.headers = [('Content-type', 'text/plain')]
         self.filter_generator = filter_generator
 
     def __iter__(self):
@@ -199,9 +199,8 @@ class TextView(collections.Iterable):
 
 
 class PassthroughView(collections.Iterable):
-    headers = []
-
     def __init__(self, filter_generator):
+        self.headers = []
         self.filter_generator = filter_generator
         for k, v in self.filter_generator.file_generator.file_headers.items():
             self.headers.append((k, v))
@@ -213,9 +212,16 @@ class PassthroughView(collections.Iterable):
 
 def get_view_generator(filter_generator, environ, root_path, config):
     """Return the view to use as per the config."""
+    # Check if the generator is an index page. If so, we don't want to apply
+    # any additional formatting
+    if isinstance(filter_generator.file_generator,
+                  generator.IndexIterableBuffer):
+        return PassthroughView(filter_generator)
+
     # Determine if html is supported by the client if yes then supply html
     # otherwise fallback to text.
     supports_html = util.should_be_html(environ)
+
     # Check file specific conditions first
     view_selected = util.get_file_conditions('view',
                                              filter_generator.file_generator,

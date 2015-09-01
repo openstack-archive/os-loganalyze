@@ -22,7 +22,6 @@ LOG_COLOR=false
 
 import argparse
 import os
-import re
 import socket
 import sys
 import wsgiref.simple_server
@@ -53,43 +52,8 @@ def parse_args():
 
 
 def top_wsgi_app(environ, start_response):
-    req_path = environ.get('PATH_INFO')
-    if bool(re.search('^/$|^/htmlify/?$', req_path)):
-        return gen_links_wsgi_app(environ, start_response)
-    else:
-        return wsgi.application(environ, start_response, root_path=LOG_PATH,
-                                wsgi_config=WSGI_CONFIG)
-
-
-def gen_links_wsgi_app(environ, start_response):
-    start_response('200 OK', [('Content-type', 'text/html')])
-    if environ.get('QUERY_STRING') == 'all':
-        return link_generator(all_files=True)
-    else:
-        return link_generator(all_files=False)
-
-
-def link_generator(all_files):
-    yield '<head><body>\n'
-
-    filenames = os.listdir(LOG_PATH)
-    if all_files:
-        yield ("Showing all files in %s. "
-               "<a href='/'>Show current logs only</a>\n" % LOG_PATH)
-    else:
-        yield ("Showing current log files in %s. "
-               "<a href='/?all'>Show all files</a>\n" % LOG_PATH)
-
-        filenames = [f for f in filenames if
-                     re.search('\.(log|txt\.gz|html.gz)$', f)]
-        # also exclude files with datestamps in their name
-        filenames = [f for f in filenames
-                     if not re.search('\d{4}-\d{2}-\d{2}', f)]
-
-    for filename in sorted(filenames):
-        yield "<p><a href='/htmlify/%s'> %s </a>\n" % (filename, filename)
-
-    yield '</body></html>\n'
+    return wsgi.application(environ, start_response, root_path=LOG_PATH,
+                            wsgi_config=WSGI_CONFIG)
 
 
 def my_ip():

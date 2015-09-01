@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Index of {{ logname }}</title>
+</head>
+<body>
+    <h1>Index of {{ logname }}</h1>
+    <ul>
+    {% for link, title in file_list %}
+        <li><a href="{{ link }}">{{ title }}</a></li>
+    {% endfor %}
+    </ul>
+</body>
+</html>

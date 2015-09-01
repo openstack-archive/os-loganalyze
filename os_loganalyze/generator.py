@@ -22,8 +22,9 @@ import os.path
 import re
 import sys
 import types
-import wsgiref.util
 import zlib
+
+import jinja2
 
 import os_loganalyze.util as util
 
@@ -64,13 +65,15 @@ def does_file_exist(fname):
 
 
 def log_name(environ):
-    path = wsgiref.util.request_uri(environ, include_query=0)
+    path = environ['PATH_INFO']
+    if path[0] == '/':
+        path = path[1:]
     match = re.search('htmlify/(.*)', path)
     if match:
         raw = match.groups(1)[0]
         return raw
 
-    return None
+    return path
 
 
 def safe_path(root, log_name):
@@ -80,7 +83,7 @@ def safe_path(root, log_name):
     remains under the root path. If not, we return None to indicate
     that we are very sad.
     """
-    if log_name:
+    if log_name is not None:
         newpath = os.path.abspath(os.path.join(root, log_name))
         if newpath.find(root) == 0:
             return newpath
@@ -106,12 +109,11 @@ _get_swift_connection.con = None
 
 
 class SwiftIterableBuffer(collections.Iterable):
-    file_headers = {}
-
     def __init__(self, logname, config):
         self.logname = logname
         self.resp_headers = {}
         self.obj = None
+        self.file_headers = {}
         self.file_headers['filename'] = logname
 
         if not config.has_section('swift'):
@@ -185,14 +187,13 @@ class SwiftIterableBuffer(collections.Iterable):
 
 
 class DiskIterableBuffer(collections.Iterable):
-    file_headers = {}
-
     def __init__(self, logname, logpath, config):
         self.logname = logname
         self.logpath = logpath
         self.resp_headers = {}
         self.obj = fileinput.FileInput(self.logpath,
                                        openhook=fileinput.hook_compressed)
+        self.file_headers = {}
         self.file_headers['filename'] = logname
         self.file_headers.update(util.get_headers_for_file(logpath))
 
@@ -200,13 +201,78 @@ class DiskIterableBuffer(collections.Iterable):
         return self.obj
 
 
+class IndexIterableBuffer(collections.Iterable):
+    def __init__(self, logname, logpath, config):
+        self.logname = logname
+        self.logpath = logpath
+        self.config = config
+        self.resp_headers = {}
+        self.file_headers = {}
+        self.file_headers['Content-type'] = 'text/html'
+
+        # file_list is a list of tuples (relpath, name)
+        self.file_list = self.disk_list() + self.swift_list()
+        self.file_list = sorted(self.file_list, key=lambda tup: tup[0])
+
+    def disk_list(self):
+        file_list = []
+        if os.path.isdir(self.logpath):
+            for f in os.listdir(self.logpath):
+                if os.path.isdir(os.path.join(self.logpath, f)):
+                    f = f + '/' if f[-1] != '/' else f
+                file_list.append((
+                    os.path.join('/', self.logname, f),
+                    f
+                ))
+        return file_list
+
+    def swift_list(self):
+        file_list = []
+        if self.config.has_section('swift'):
+            try:
+                swift_config = dict(self.config.items('swift'))
+                con = _get_swift_connection(swift_config)
+
+                prefix = self.logname + '/' if self.logname[-1] != '/' \
+                    else self.logname
+                resp, files = con.get_container(swift_config['container'],
+                                                prefix=prefix,
+                                                delimiter='/')
+
+                for f in files:
+                    if 'subdir' in f:
+                        fname = os.path.relpath(f['subdir'], self.logname)
+                        fname = fname + '/' if f['subdir'][-1] == '/' else \
+                            fname
+                    else:
+                        fname = os.path.relpath(f['name'], self.logname)
+                    file_list.append((
+                        os.path.join('/', self.logname, fname),
+                        fname
+                    ))
+            except Exception:
+                import traceback
+                sys.stderr.write("Error fetching index list from swift.\n")
+                sys.stderr.write('logname: %s\n' % self.logname)
+                traceback.print_exc()
+
+        return file_list
+
+    def __iter__(self):
+        env = jinja2.Environment(
+            loader=jinja2.PackageLoader('os_loganalyze', 'templates'))
+        template = env.get_template('file_index.html')
+        gen = template.generate(logname=self.logname,
+                                file_list=self.file_list)
+        for l in gen:
+            yield l.encode("utf-8")
+
+
 def get_file_generator(environ, root_path, config=None):
     logname = log_name(environ)
     logpath = safe_path(root_path, logname)
-    file_headers = {}
-    if not logpath:
+    if logpath is None:
         raise UnsafePath()
-    file_headers['filename'] = os.path.basename(logpath)
 
     file_generator = None
     # if we want swift only, we'll skip processing files
@@ -218,7 +284,7 @@ def get_file_generator(environ, root_path, config=None):
         # NOTE(jhesketh): If the requested URL ends in a trailing slash we
         # assume that this is meaning to load an index.html from our pseudo
         # filesystem and attempt that first.
-        if logname[-1] == '/':
+        if logname and logname[-1] == '/':
             file_generator = SwiftIterableBuffer(
                 os.path.join(logname, 'index.html'), config)
             if not file_generator.obj:
@@ -229,10 +295,17 @@ def get_file_generator(environ, root_path, config=None):
             file_generator = SwiftIterableBuffer(logname, config)
             if not file_generator.obj:
                 # The object doesn't exist. Try again appending index.html
-                logname = os.path.join(logname, 'index.html')
-                file_generator = SwiftIterableBuffer(logname, config)
+                file_generator = SwiftIterableBuffer(
+                    os.path.join(logname, 'index.html'), config)
 
-    if not file_generator.obj:
+    if not file_generator or not file_generator.obj:
+        if config.has_section('general'):
+            if config.has_option('general', 'generate_folder_index'):
+                if config.getboolean('general', 'generate_folder_index'):
+                    index_generator = IndexIterableBuffer(logname, logpath,
+                                                          config)
+                    if len(index_generator.file_list) > 0:
+                        return index_generator
         raise NoSuchFile()
 
     return file_generator

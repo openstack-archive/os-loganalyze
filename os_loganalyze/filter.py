@@ -17,6 +17,7 @@
 
 import re
 
+import os_loganalyze.generator as generator
 import os_loganalyze.util as util
 
 # which logs support severity
@@ -160,6 +161,11 @@ class NoFilter(object):
 
 def get_filter_generator(file_generator, environ, root_path, config):
     """Return the filter to use as per the config."""
+
+    # Check if the generator is an index page. If so, we don't want to apply
+    # any filters
+    if isinstance(file_generator, generator.IndexIterableBuffer):
+        return NoFilter(file_generator)
 
     # Check file specific conditions first
     filter_selected = util.get_file_conditions('filter', file_generator,
