@@ -4,4 +4,4 @@ source = os_loganalyze
 omit = os_loganalyze/tests/*,os_loganalyze/openstack/*
 
 [report]
-ignore-errors = True
+ignore_errors = True
