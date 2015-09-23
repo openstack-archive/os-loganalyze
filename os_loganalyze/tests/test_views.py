@@ -50,3 +50,12 @@ class TestViews(base.TestCase):
         # Move the generator so that the is_html flag is set
         i.next()
         self.assertTrue(html_view.is_html)
+
+    def test_empty_file_html_view(self):
+        gen = self.get_generator('empty.html')
+        html_view = osview.HTMLView(gen)
+        self.assertFalse(html_view.is_html)
+        full_text = ""
+        for i in html_view:
+            full_text += i
+        self.assertEqual("", full_text)

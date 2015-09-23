@@ -165,7 +165,15 @@ class HTMLView(collections.Iterable):
 
     def __iter__(self):
         igen = (x for x in self.filter_generator)
-        first_line = next(igen)
+        # Grab the first non-empty line
+        first_line = None
+        for i in igen:
+            if i.line:
+                first_line = i
+                break
+        if not first_line:
+            # The file must be empty
+            return
         self._discover_html(first_line.line)
 
         if not self.is_html:
