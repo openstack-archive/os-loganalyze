@@ -91,6 +91,16 @@ def safe_path(root, log_name):
     return None
 
 
+def sizeof_fmt(num, suffix='B'):
+    # From http://stackoverflow.com/questions/1094841/
+    # reusable-library-to-get-human-readable-version-of-file-size
+    for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Y', suffix)
+
+
 def _get_swift_connection(swift_config):
     # TODO(jhesketh): refactor the generator into a class so we can keep a
     # persistent connection. For now, emulate a static variable on this method
@@ -213,18 +223,22 @@ class IndexIterableBuffer(collections.Iterable):
         # Use sets here to dedup. We can have duplicates
         # if disk and swift based paths have overlap.
         file_set = self.disk_list() | self.swift_list()
-        # file_list is a list of tuples (relpath, name)
+        # file_list is a list of tuples (relpath, name, size)
         self.file_list = sorted(file_set, key=lambda tup: tup[0])
 
     def disk_list(self):
         file_set = set()
         if os.path.isdir(self.logpath):
             for f in os.listdir(self.logpath):
-                if os.path.isdir(os.path.join(self.logpath, f)):
+                full_path = os.path.join(self.logpath, f)
+                stat_info = os.stat(full_path)
+                size = sizeof_fmt(stat_info.st_size)
+                if os.path.isdir(full_path):
                     f = f + '/' if f[-1] != '/' else f
                 file_set.add((
                     os.path.join('/', self.logname, f),
-                    f
+                    f,
+                    size
                 ))
         return file_set
 
@@ -248,9 +262,11 @@ class IndexIterableBuffer(collections.Iterable):
                             fname
                     else:
                         fname = os.path.relpath(f['name'], self.logname)
+                    # TODO(clarkb) get size from swift and write it here.
                     file_set.add((
                         os.path.join('/', self.logname, fname),
-                        fname
+                        fname,
+                        "NA"
                     ))
             except Exception:
                 import traceback

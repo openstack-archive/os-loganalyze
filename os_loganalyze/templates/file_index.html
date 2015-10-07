@@ -5,10 +5,10 @@
 </head>
 <body>
     <h1>Index of {{ logname }}</h1>
-    <ul>
-    {% for link, title in file_list %}
-        <li><a href="{{ link }}">{{ title }}</a></li>
+    <table><tr><th>Name</th><th>Size</th></tr>
+    {% for link, title, size in file_list %}
+        <tr><td><a href="{{ link }}">{{ title }}</a></td><td style="text-align: right">{{ size }}</td></tr>
     {% endfor %}
-    </ul>
+    </table>
 </body>
 </html>
