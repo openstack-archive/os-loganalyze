@@ -210,24 +210,26 @@ class IndexIterableBuffer(collections.Iterable):
         self.file_headers = {}
         self.file_headers['Content-type'] = 'text/html'
 
+        # Use sets here to dedup. We can have duplicates
+        # if disk and swift based paths have overlap.
+        file_set = self.disk_list() | self.swift_list()
         # file_list is a list of tuples (relpath, name)
-        self.file_list = self.disk_list() + self.swift_list()
-        self.file_list = sorted(self.file_list, key=lambda tup: tup[0])
+        self.file_list = sorted(file_set, key=lambda tup: tup[0])
 
     def disk_list(self):
-        file_list = []
+        file_set = set()
         if os.path.isdir(self.logpath):
             for f in os.listdir(self.logpath):
                 if os.path.isdir(os.path.join(self.logpath, f)):
                     f = f + '/' if f[-1] != '/' else f
-                file_list.append((
+                file_set.add((
                     os.path.join('/', self.logname, f),
                     f
                 ))
-        return file_list
+        return file_set
 
     def swift_list(self):
-        file_list = []
+        file_set = set()
         if self.config.has_section('swift'):
             try:
                 swift_config = dict(self.config.items('swift'))
@@ -246,7 +248,7 @@ class IndexIterableBuffer(collections.Iterable):
                             fname
                     else:
                         fname = os.path.relpath(f['name'], self.logname)
-                    file_list.append((
+                    file_set.add((
                         os.path.join('/', self.logname, fname),
                         fname
                     ))
@@ -256,7 +258,7 @@ class IndexIterableBuffer(collections.Iterable):
                 sys.stderr.write('logname: %s\n' % self.logname)
                 traceback.print_exc()
 
-        return file_list
+        return file_set
 
     def __iter__(self):
         env = jinja2.Environment(
@@ -299,13 +301,13 @@ def get_file_generator(environ, root_path, config=None):
                     os.path.join(logname, 'index.html'), config)
 
     if not file_generator or not file_generator.obj:
-        if config.has_section('general'):
-            if config.has_option('general', 'generate_folder_index'):
-                if config.getboolean('general', 'generate_folder_index'):
-                    index_generator = IndexIterableBuffer(logname, logpath,
-                                                          config)
-                    if len(index_generator.file_list) > 0:
-                        return index_generator
+        if (config.has_section('general') and
+                config.has_option('general', 'generate_folder_index') and
+                config.getboolean('general', 'generate_folder_index')):
+            index_generator = IndexIterableBuffer(logname, logpath,
+                                                  config)
+            if len(index_generator.file_list) > 0:
+                return index_generator
         raise NoSuchFile()
 
     return file_generator
