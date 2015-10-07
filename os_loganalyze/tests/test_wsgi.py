@@ -106,7 +106,8 @@ def fake_get_container_factory(_swift_index_items=None):
                 if i[-1] == '/':
                     index_items.append({'subdir': os.path.join(prefix, i)})
                 else:
-                    index_items.append({'name': os.path.join(prefix, i)})
+                    index_items.append({'name': os.path.join(prefix, i),
+                                        'bytes': 4200})
         elif _swift_index_items == []:
             name = prefix[len('non-existent/'):]
             p = os.path.join(base.samples_path('samples'), name)
@@ -115,7 +116,8 @@ def fake_get_container_factory(_swift_index_items=None):
                     index_items.append(
                         {'subdir': os.path.join(prefix, i + '/')})
                 else:
-                    index_items.append({'name': os.path.join(prefix, i)})
+                    index_items.append({'name': os.path.join(prefix, i),
+                                        'bytes': 4200})
         else:
             # No swift container data.
             pass
@@ -416,12 +418,12 @@ class TestWsgiSwift(TestWsgiDisk):
         self.assertEqual(
             '        <tr><td><a href="/non-existent/console.html.gz">'
             'console.html.gz</a></td><td style="text-align: right">'
-            'NA</td></tr>',
+            '4.1KB</td></tr>',
             full_lines[9])
         self.assertEqual(
             '        <tr><td><a href="/non-existent/wsgi_plain.conf">'
             'wsgi_plain.conf</a></td><td style="text-align: right">'
-            'NA</td></tr>',
+            '4.1KB</td></tr>',
             full_lines[-5])
         self.assertEqual('</html>', full_lines[-1])
 
@@ -444,11 +446,11 @@ class TestWsgiSwift(TestWsgiDisk):
         self.assertIn('samples/</title>', full_lines[3])
         self.assertEqual(
             '        <tr><td><a href="/samples/a">a</a></td>'
-            '<td style="text-align: right">NA</td></tr>',
+            '<td style="text-align: right">4.1KB</td></tr>',
             full_lines[9])
         self.assertEqual(
             '        <tr><td><a href="/samples/b">b</a></td>'
-            '<td style="text-align: right">NA</td></tr>',
+            '<td style="text-align: right">4.1KB</td></tr>',
             full_lines[11])
         self.assertEqual(
             '        <tr><td><a href="/samples/console.html.gz">'
@@ -457,7 +459,7 @@ class TestWsgiSwift(TestWsgiDisk):
             full_lines[13])
         self.assertEqual(
             '        <tr><td><a href="/samples/dir/">dir/</a></td>'
-            '<td style="text-align: right">NA</td></tr>',
+            '<td style="text-align: right">0.0B</td></tr>',
             full_lines[17])
         self.assertEqual(
             '        <tr><td><a href="/samples/wsgi_plain.conf">'
@@ -466,6 +468,6 @@ class TestWsgiSwift(TestWsgiDisk):
             full_lines[-7])
         self.assertEqual(
             '        <tr><td><a href="/samples/z">z</a></td>'
-            '<td style="text-align: right">NA</td></tr>',
+            '<td style="text-align: right">4.1KB</td></tr>',
             full_lines[-5])
         self.assertEqual('</html>', full_lines[-1])

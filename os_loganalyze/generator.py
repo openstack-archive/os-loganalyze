@@ -256,17 +256,17 @@ class IndexIterableBuffer(collections.Iterable):
                                                 delimiter='/')
 
                 for f in files:
+                    size = sizeof_fmt(f.get('bytes', 0))
                     if 'subdir' in f:
                         fname = os.path.relpath(f['subdir'], self.logname)
                         fname = fname + '/' if f['subdir'][-1] == '/' else \
                             fname
                     else:
                         fname = os.path.relpath(f['name'], self.logname)
-                    # TODO(clarkb) get size from swift and write it here.
                     file_set.add((
                         os.path.join('/', self.logname, fname),
                         fname,
-                        "NA"
+                        size
                     ))
             except Exception:
                 import traceback
