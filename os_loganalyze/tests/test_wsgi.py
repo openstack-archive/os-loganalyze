@@ -23,6 +23,7 @@ import types
 
 import mock
 import swiftclient  # noqa needed for monkeypatching
+import testtools
 
 from os_loganalyze.tests import base
 import os_loganalyze.util
@@ -40,6 +41,8 @@ SEVS = {
     }
 
 SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
+
+ISO8601RE = r'\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(.\d+)?'
 
 
 # add up all the counts from a generator
@@ -107,6 +110,7 @@ def fake_get_container_factory(_swift_index_items=None):
                     index_items.append({'subdir': os.path.join(prefix, i)})
                 else:
                     index_items.append({'name': os.path.join(prefix, i),
+                                        'last_modified': '2042-12-31T23:59:59',
                                         'bytes': 4200})
         elif _swift_index_items == []:
             name = prefix[len('non-existent/'):]
@@ -117,6 +121,7 @@ def fake_get_container_factory(_swift_index_items=None):
                         {'subdir': os.path.join(prefix, i + '/')})
                 else:
                     index_items.append({'name': os.path.join(prefix, i),
+                                        'last_modified': '2042-12-31T23:59:59',
                                         'bytes': 4200})
         else:
             # No swift container data.
@@ -303,16 +308,18 @@ class TestWsgiDisk(base.TestCase):
         full_lines = full.split('\n')
         self.assertEqual('<!DOCTYPE html>', full_lines[0])
         self.assertIn('samples/</title>', full_lines[3])
-        self.assertEqual(
-            '        <tr><td><a href="/samples/console.html.gz">'
-            'console.html.gz</a></td><td style="text-align: right">'
-            '277.4KB</td></tr>',
-            full_lines[9])
-        self.assertEqual(
-            '        <tr><td><a href="/samples/wsgi_plain.conf">'
-            'wsgi_plain.conf</a></td><td style="text-align: right">'
-            '177.0B</td></tr>',
-            full_lines[-5])
+        self.assertThat(
+            full_lines[9],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/console.html.gz">'
+                r'console.html.gz</a></td><td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">277.4KB</td></tr>'))
+        self.assertThat(
+            full_lines[-5],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/wsgi_plain.conf">'
+                r'wsgi_plain.conf</a></td><td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">177.0B</td></tr>'))
         self.assertEqual('</html>', full_lines[-1])
 
 
@@ -415,16 +422,18 @@ class TestWsgiSwift(TestWsgiDisk):
         full_lines = full.split('\n')
         self.assertEqual('<!DOCTYPE html>', full_lines[0])
         self.assertIn('non-existent/</title>', full_lines[3])
-        self.assertEqual(
-            '        <tr><td><a href="/non-existent/console.html.gz">'
-            'console.html.gz</a></td><td style="text-align: right">'
-            '4.1KB</td></tr>',
-            full_lines[9])
-        self.assertEqual(
-            '        <tr><td><a href="/non-existent/wsgi_plain.conf">'
-            'wsgi_plain.conf</a></td><td style="text-align: right">'
-            '4.1KB</td></tr>',
-            full_lines[-5])
+        self.assertThat(
+            full_lines[9],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/non-existent/console.html.gz">'
+                r'console.html.gz</a></td><td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">4.1KB</td></tr>'))
+        self.assertThat(
+            full_lines[-5],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/non-existent/wsgi_plain.conf">'
+                r'wsgi_plain.conf</a></td><td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">4.1KB</td></tr>'))
         self.assertEqual('</html>', full_lines[-1])
 
     @mock.patch.object(swiftclient.client.Connection, 'get_container',
@@ -444,30 +453,38 @@ class TestWsgiSwift(TestWsgiDisk):
         full_lines = full.split('\n')
         self.assertEqual('<!DOCTYPE html>', full_lines[0])
         self.assertIn('samples/</title>', full_lines[3])
+        self.assertThat(
+            full_lines[9],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/a">a</a></td>'
+                r'<td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">4.1KB</td></tr>'))
+        self.assertThat(
+            full_lines[11],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/b">b</a></td>'
+                r'<td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">4.1KB</td></tr>'))
+        self.assertThat(
+            full_lines[13],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/console.html.gz">'
+                r'console.html.gz</a></td><td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">277.4KB</td></tr>'))
         self.assertEqual(
-            '        <tr><td><a href="/samples/a">a</a></td>'
-            '<td style="text-align: right">4.1KB</td></tr>',
-            full_lines[9])
-        self.assertEqual(
-            '        <tr><td><a href="/samples/b">b</a></td>'
-            '<td style="text-align: right">4.1KB</td></tr>',
-            full_lines[11])
-        self.assertEqual(
-            '        <tr><td><a href="/samples/console.html.gz">'
-            'console.html.gz</a></td><td style="text-align: right">'
-            '277.4KB</td></tr>',
-            full_lines[13])
-        self.assertEqual(
+            full_lines[17],
             '        <tr><td><a href="/samples/dir/">dir/</a></td>'
-            '<td style="text-align: right">0.0B</td></tr>',
-            full_lines[17])
-        self.assertEqual(
-            '        <tr><td><a href="/samples/wsgi_plain.conf">'
-            'wsgi_plain.conf</a></td><td style="text-align: right">'
-            '177.0B</td></tr>',
-            full_lines[-7])
-        self.assertEqual(
-            '        <tr><td><a href="/samples/z">z</a></td>'
-            '<td style="text-align: right">4.1KB</td></tr>',
-            full_lines[-5])
+            '<td>unknown</td><td style="text-align: right">0.0B</td></tr>')
+        self.assertThat(
+            full_lines[-7],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/wsgi_plain.conf">'
+                r'wsgi_plain.conf</a></td><td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">177.0B</td></tr>'))
+        self.assertThat(
+            full_lines[-5],
+            testtools.matchers.MatchesRegex(
+                r'        <tr><td><a href="/samples/z">z</a></td>'
+                r'<td>' + ISO8601RE + r'</td>'
+                r'<td style="text-align: right">4.1KB</td></tr>'))
         self.assertEqual('</html>', full_lines[-1])

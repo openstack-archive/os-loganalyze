@@ -17,6 +17,7 @@
 # under the License.
 
 import collections
+import datetime
 import fileinput
 import os.path
 import re
@@ -223,7 +224,7 @@ class IndexIterableBuffer(collections.Iterable):
         # Use sets here to dedup. We can have duplicates
         # if disk and swift based paths have overlap.
         file_set = self.disk_list() | self.swift_list()
-        # file_list is a list of tuples (relpath, name, size)
+        # file_list is a list of tuples (relpath, name, mtime, size)
         self.file_list = sorted(file_set, key=lambda tup: tup[0])
 
     def disk_list(self):
@@ -233,11 +234,14 @@ class IndexIterableBuffer(collections.Iterable):
                 full_path = os.path.join(self.logpath, f)
                 stat_info = os.stat(full_path)
                 size = sizeof_fmt(stat_info.st_size)
+                mtime = datetime.datetime.utcfromtimestamp(
+                    stat_info.st_mtime).isoformat()
                 if os.path.isdir(full_path):
                     f = f + '/' if f[-1] != '/' else f
                 file_set.add((
                     os.path.join('/', self.logname, f),
                     f,
+                    mtime,
                     size
                 ))
         return file_set
@@ -257,6 +261,7 @@ class IndexIterableBuffer(collections.Iterable):
 
                 for f in files:
                     size = sizeof_fmt(f.get('bytes', 0))
+                    mtime = f.get('last_modified', 'unknown')
                     if 'subdir' in f:
                         fname = os.path.relpath(f['subdir'], self.logname)
                         fname = fname + '/' if f['subdir'][-1] == '/' else \
@@ -266,6 +271,7 @@ class IndexIterableBuffer(collections.Iterable):
                     file_set.add((
                         os.path.join('/', self.logname, fname),
                         fname,
+                        mtime,
                         size
                     ))
             except Exception:
