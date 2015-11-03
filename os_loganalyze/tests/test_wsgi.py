@@ -295,6 +295,49 @@ class TestWsgiDisk(base.TestCase):
         with open(base.samples_path('samples') + 'openstack_logo.png') as f:
             self.assertEqual(first, f.readline())
 
+    @mock.patch.object(swiftclient.client.Connection, 'get_object',
+                       fake_get_object)
+    def test_accept_range(self):
+        gen = self.get_generator('screen-c-api.txt.gz', range_bytes='0-5')
+        body = gen.next()
+        self.assertEqual('<html>', body)
+
+    @mock.patch.object(swiftclient.client.Connection, 'get_object',
+                       fake_get_object)
+    def test_accept_range_seek(self):
+        gen = self.get_generator('screen-c-api.txt.gz', range_bytes='7-12')
+        body = gen.next()
+        self.assertEqual('<head>', body)
+
+    @mock.patch.object(swiftclient.client.Connection, 'get_object',
+                       fake_get_object)
+    def test_accept_range_no_start(self):
+        gen = self.get_generator('screen-c-api.txt.gz', range_bytes='-8')
+        body = gen.next()
+        self.assertEqual('</html>\n', body)
+
+    @mock.patch.object(swiftclient.client.Connection, 'get_object',
+                       fake_get_object)
+    def test_accept_range_no_end(self):
+        gen = self.get_generator('screen-c-api.txt.gz', range_bytes='7-')
+        body = gen.next()
+        self.assertNotIn('<html>', body)
+        self.assertIn('<head>', body)
+
+    @mock.patch.object(swiftclient.client.Connection, 'get_object',
+                       fake_get_object)
+    def test_accept_range_no_start_no_end(self):
+        gen = self.get_generator('screen-c-api.txt.gz', range_bytes='-')
+        body = gen.next()
+        self.assertEqual('Invalid Range', body)
+
+    @mock.patch.object(swiftclient.client.Connection, 'get_object',
+                       fake_get_object)
+    def test_accept_range_no_hyphen(self):
+        gen = self.get_generator('screen-c-api.txt.gz', range_bytes='7')
+        body = gen.next()
+        self.assertEqual('Invalid Range', body)
+
     @mock.patch.object(swiftclient.client.Connection, 'get_container',
                        fake_get_container_factory())
     def test_folder_index(self):

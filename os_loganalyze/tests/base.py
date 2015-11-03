@@ -98,7 +98,7 @@ class TestCase(testtools.TestCase):
         return filename
 
     def get_generator(self, fname, level=None, html=True,
-                      limit=None, source=None):
+                      limit=None, source=None, range_bytes=None):
         kwargs = {'PATH_INFO': '/htmlify/%s/%s' % (self.samples_directory,
                                                    fname)}
         qs = {}
@@ -113,6 +113,9 @@ class TestCase(testtools.TestCase):
 
         if html:
             kwargs['HTTP_ACCEPT'] = 'text/html'
+
+        if range_bytes:
+            kwargs['HTTP_RANGE'] = 'bytes=%s' % range_bytes
 
         gen = log_wsgi.application(
             self.fake_env(**kwargs),

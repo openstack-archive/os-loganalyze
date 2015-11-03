@@ -38,6 +38,94 @@ def get_config(wsgi_config):
     return config
 
 
+def get_range(environ, start_response, view_generator):
+        if '-' not in environ['HTTP_RANGE']:
+            status = '400 Bad Request'
+            response_headers = [('Content-type', 'text/plain')]
+            start_response(status, response_headers)
+            yield 'Invalid Range'
+            return
+
+        _range = environ['HTTP_RANGE'].split('=')[1].split('-')
+
+        try:
+            start = None
+            if _range[0] is not '':
+                start = int(_range[0])
+
+            end = None
+            if _range[1] is not '':
+                end = int(_range[1])
+        except ValueError:
+            status = '400 Bad Request'
+            response_headers = [('Content-type', 'text/plain')]
+            start_response(status, response_headers)
+            yield 'Invalid Range'
+            return
+
+        if start is None and end is None:
+            status = '400 Bad Request'
+            response_headers = [('Content-type', 'text/plain')]
+            start_response(status, response_headers)
+            yield 'Invalid Range'
+            return
+
+        # bytes=-5 means the last 5 bytes
+        remainder = None
+        if start is None:
+            remainder = -end  # this will be a negative index
+            start = 0
+            end = None
+
+        position = 0
+        body = []
+
+        status = '206 Partial Content'
+        start_response(status, view_generator.headers)
+
+        stop = False
+        for chunk in view_generator:
+            new_chunk = None
+
+            if (position + len(chunk)) < start:
+                # ignore this chunk
+                position += len(chunk)
+            elif position < start:
+                # start is between position and position + len(chunk)
+                # we only want a portion of this chunk
+                offset = start - position
+                if end and end < (position + len(chunk)):
+                    # the entire range is a subset of this chunk
+                    cutoff = end - position + 1
+                    new_chunk = chunk[offset:cutoff]
+                    stop = True  # don't break until we have yielded
+                else:
+                    new_chunk = chunk[offset:]
+                    position += len(chunk[offset:])
+            elif end and end <= (position + len(chunk)):
+                cutoff = end - position + 1
+                new_chunk = chunk[:cutoff]
+                stop = True  # don't break until we have yielded
+            else:
+                new_chunk = chunk
+                position += len(chunk)
+
+            if remainder and new_chunk:
+                body.append(new_chunk)
+            elif new_chunk:
+                yield new_chunk
+
+            if stop:
+                break
+
+        if remainder:
+            _body = ''.join(body)
+            if len(_body) > -remainder:  # remainder is negative
+                yield _body[remainder:]
+            else:
+                yield _body
+
+
 def application(environ, start_response, root_path=None,
                 wsgi_config='/etc/os_loganalyze/wsgi.conf'):
     if root_path is None:
@@ -69,8 +157,12 @@ def application(environ, start_response, root_path=None,
     view_generator = osview.get_view_generator(filter_generator, environ,
                                                root_path, config)
 
-    start_response(status, view_generator.headers)
-    return view_generator
+    if 'HTTP_RANGE' in environ:
+        return get_range(environ, start_response, view_generator)
+
+    else:
+        start_response(status, view_generator.headers)
+        return view_generator
 
 
 # for development purposes, makes it easy to test the filter output
