@@ -23,7 +23,8 @@ import os_loganalyze.util as util
 # which logs support severity
 SUPPORTS_SEV = re.compile(
     r'/'  # this uses an re.search so anchor the string
-    r'((screen-)?(n-|c-|q-|g-|h-|ir-|m-|ceil|key|sah|des|tr)'  # openstack logs
+    r'((screen-)?(n-|c-|q-|g-|h-|ir-|ironic-|m-|'
+    r'ceil|key|sah|des|tr)'  # openstack logs
     r'|(keystone|tempest)\.txt|syslog)')  # other things we understand
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
