@@ -110,6 +110,20 @@ class TestFilters(base.TestCase):
         self.assertIn("<a name='_2013-09-27_18_09_18_784' "
                       "class='date' href='#_2013-09-27_18_09_18_784'>", line)
 
+        # We've snuck some high-precision microsecond timestamps as
+        # produced by zuul-runner in the end of this file; make sure
+        # they are recognised.
+        found = False
+        for line in gen:
+            look_for = "<span class='NONE _2013-09-27_18_47_33_342999'>" \
+                       "<a name='_2013-09-27_18_47_33_342999' class='date' " \
+                       "href='#_2013-09-27_18_47_33_342999'>" \
+                       "2013-09-27 18:47:33.342999</a>"
+            if line.startswith(look_for):
+                found = True
+
+        self.assertTrue(found)
+
     def test_html_escape(self):
         gen = self.get_generator('screen-n-api-2.txt.gz')
         # throw away header
