@@ -23,7 +23,8 @@ import os_loganalyze.util as util
 # which logs support severity
 SUPPORTS_SEV = re.compile(
     r'/'  # this uses an re.search so anchor the string
-    r'((screen-)?(n-|c-|q-|g-|h-|ir-|ironic-|m-|'
+    r'((screen-)?(n-|c-|g-|h-|ir-|ironic-|m-|'
+    r'q-|neutron-|'  # support both lib/neutron and lib/neutron-legacy logs
     r'ceil|key|sah|des|tr)'  # openstack logs
     # other things we understand
     r'|(keystone|placement-api|tempest)\.txt|syslog)')

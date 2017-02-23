@@ -159,6 +159,14 @@ class TestWsgiDisk(base.TestCase):
             'WARNING': 48,
             'ERROR': 72,
             },
+        'screen-neutron-l3.txt.gz': {
+            'DEBUG': 25212,
+            'INFO': 85,
+            'AUDIT': 0,
+            'TRACE': 0,
+            'WARNING': 122,
+            'ERROR': 19,
+            },
         }
 
     @mock.patch.object(swiftclient.client.Connection, 'get_object',
