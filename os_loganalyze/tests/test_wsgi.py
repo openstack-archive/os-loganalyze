@@ -18,7 +18,9 @@
 Test the ability to convert files into wsgi generators
 """
 
+import collections
 import os
+import re
 import types
 
 import mock
@@ -43,28 +45,26 @@ SEVS = {
 SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
 
 ISO8601RE = r'\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(.\d+)?'
+TIME_REGEX = r'\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d(.\d+)?'
 
 
 # add up all the counts from a generator
 def count_types(gen):
-    counts = {
-        'TOTAL': 0,
-        'DEBUG': 0,
-        'INFO': 0,
-        'WARNING': 0,
-        'ERROR': 0,
-        'TRACE': 0,
-        'AUDIT': 0}
+    counts = collections.defaultdict(lambda: 0)
 
-    laststatus = None
     for line in gen:
-        counts['TOTAL'] = counts['TOTAL'] + 1
-        for key in counts:
-            if ' %s ' % key in line:
-                laststatus = key
-                continue
-        if laststatus:
-            counts[laststatus] = counts[laststatus] + 1
+        counted = False
+
+        # is it even a proper log message?
+        if re.match(TIME_REGEX, line):
+            # skip NONE since it's an implicit level
+            for key in SEVS_SEQ[1:]:
+                if ' %s ' % key in line:
+                    counts[key] += 1
+                    counted = True
+                    break
+        if not counted:
+            counts['NONE'] += 1
     return counts
 
 
@@ -136,8 +136,7 @@ class TestWsgiDisk(base.TestCase):
     # counts for known files for testing
     files = {
         'screen-c-api.txt.gz': {
-            'TOTAL': 3695,
-            'DEBUG': 2906,
+            'DEBUG': 2804,
             'INFO': 486,
             'AUDIT': 249,
             'TRACE': 0,
@@ -145,17 +144,15 @@ class TestWsgiDisk(base.TestCase):
             'ERROR': 0,
             },
         'screen-n-api.txt.gz': {
-            'TOTAL': 50745,
-            'DEBUG': 46071,
-            'INFO': 4388,
+            'DEBUG': 11886,
+            'INFO': 2721,
             'AUDIT': 271,
             'TRACE': 0,
             'WARNING': 6,
             'ERROR': 5
             },
         'screen-q-svc.txt.gz': {
-            'TOTAL': 47887,
-            'DEBUG': 46912,
+            'DEBUG': 43584,
             'INFO': 262,
             'AUDIT': 0,
             'TRACE': 589,
@@ -169,25 +166,23 @@ class TestWsgiDisk(base.TestCase):
     def test_pass_through_all(self):
         for fname in self.files:
             gen = self.get_generator(fname, html=False)
-
-            counts = count_types(gen)
-            self.assertEqual(counts['TOTAL'], self.files[fname]['TOTAL'])
+            self.assertEqual(
+                compute_total('DEBUG', count_types(gen)),
+                compute_total('DEBUG', self.files[fname]))
 
     @mock.patch.object(swiftclient.client.Connection, 'get_object',
                        fake_get_object)
     def test_pass_through_at_levels(self):
         for fname in self.files:
             for level in self.files[fname]:
-                if level == 'TOTAL':
-                    continue
-
                 gen = self.get_generator(fname, level=level, html=False)
 
                 counts = count_types(gen)
-                total = compute_total(level, self.files[fname])
                 print(fname, counts)
 
-                self.assertEqual(counts['TOTAL'], total)
+                self.assertEqual(
+                    compute_total(level, counts),
+                    compute_total(level, self.files[fname]))
 
     @mock.patch.object(swiftclient.client.Connection, 'get_object',
                        fake_get_object)
