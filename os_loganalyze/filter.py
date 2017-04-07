@@ -26,10 +26,11 @@ SUPPORTS_SEV = re.compile(
     r'((screen-)?(n-|c-|g-|h-|ir-|ironic-|m-|'
     r'q-|neutron-|'  # support both lib/neutron and lib/neutron-legacy logs
     r'ceil|key|sah|des|tr)'  # openstack logs
+    r'|(devstack\@)'  # systemd logs
     # other things we understand
     r'|(keystone|placement-api|tempest)\.txt|syslog)')
 
-SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}'
+SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
 STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
 
@@ -38,11 +39,14 @@ OSLO_LOGMATCH = '^(?P<date>%s)(?P<line>(?P<pid> \d+)? (?P<status>%s).*)' % \
 SYSLOG_MATCH = ('^(?P<date>%s)(?P<line> (?P<host>[\w\-]+) '
                 '(?P<service>\S+):.*)' %
                 (SYSLOGDATE))
+SYSTEMD_MATCH = '^(?P<date>%s)(?P<line>\S+ \S+\: (?P<status>%s).*)' % \
+                (SYSLOGDATE, STATUSFMT)
 CONSOLE_MATCH = '^(?P<date>%s)(?P<line>.*)' % DATEFMT
 
 OSLORE = re.compile(OSLO_LOGMATCH)
 SYSLOGRE = re.compile(SYSLOG_MATCH)
 CONSOLERE = re.compile(CONSOLE_MATCH)
+SYSTEMDRE = re.compile(SYSTEMD_MATCH)
 
 SEVS = {
     'NONE': 0,
@@ -81,6 +85,12 @@ class LogLine(object):
             self.line = m.group('line')
             self.date = m.group('date')
             self.pid = m.group('pid')
+            return
+        m = SYSTEMDRE.match(line)
+        if m:
+            self.status = m.group('status')
+            self.line = m.group('line')
+            self.date = m.group('date')
             return
         m = CONSOLERE.match(line)
         if m:
