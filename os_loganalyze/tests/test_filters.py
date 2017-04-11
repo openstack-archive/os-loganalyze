@@ -36,6 +36,7 @@ class TestSupportsSevRegex(base.TestCase):
         yes("/n-api.txt.gz")
         yes("/c-vol.txt.gz")
         yes("/tempest.txt")
+        yes("/devstack@c-api.service.log.txt")
         # this specific bug was hit previously
         no("check/gate-horizon-python27/1dba20d/console.html")
         no("check/gate-tempest-dsvm-trove/c5950fc/console.html")
@@ -65,6 +66,27 @@ class TestFilters(base.TestCase):
         line = gen.next()
         self.assertIn("class='DEBUG", line)
         self.assertIn("href='#_2013-09-27_18_22_11_249'", line)
+
+    def test_systemd_filters(self):
+        gen = self.get_generator('devstack@c-api.service.log.txt')
+        # dump the header
+        gen.next()
+        # dump the systemd line
+        gen.next()
+
+        # first line
+        line = gen.next()
+        self.assertIn("NONE", line)
+        self.assertIn("href='#_Mar_28_12_20_42_377230'", line)
+
+        # second line
+        line = gen.next()
+        self.assertIn("WARNING", line)
+        self.assertIn("href='#_Mar_28_12_20_43_570064", line)
+        # third line
+        line = gen.next()
+        self.assertIn("DEBUG", line)
+        self.assertIn("href='#_Mar_28_12_20_44_172534'", line)
 
     def test_devstack_filters(self):
         gen = self.get_generator('devstacklog.txt.gz')
