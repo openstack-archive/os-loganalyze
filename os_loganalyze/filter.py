@@ -40,7 +40,7 @@ SYSLOG_MATCH = ('^(?P<date>%s)(?P<line> (?P<host>[\w\-]+) '
                 '(?P<service>[^\[\s]+):.*)' %
                 (SYSLOGDATE))
 SYSTEMD_MATCH = (
-    '^(?P<date>%s) (?P<line>(?P<host>\S+) \S+\[\d+\]\: (?P<status>%s)?.*)' %
+    '^(?P<date>%s)(?P<line> (?P<host>\S+) \S+\[\d+\]\: (?P<status>%s)?.*)' %
     (SYSLOGDATE, STATUSFMT))
 CONSOLE_MATCH = '^(?P<date>%s)(?P<line>.*)' % DATEFMT
 
