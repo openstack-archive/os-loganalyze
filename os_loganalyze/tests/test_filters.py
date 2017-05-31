@@ -88,6 +88,33 @@ class TestFilters(base.TestCase):
         self.assertIn("DEBUG", line)
         self.assertIn("href='#_Mar_28_12_20_44_172534'", line)
 
+    def test_no_sev_matches_last_sev(self):
+        gen = self.get_generator('devstack@c-vol.service.log.txt')
+        # dump the header
+        gen.next()
+
+        # first line
+        line = gen.next()
+        self.assertIn("INFO", line)
+        self.assertIn("href='#_May_26_20_44_32_276580'", line)
+
+        # second line
+        line = gen.next()
+        self.assertIn("INFO", line)
+        self.assertIn("Traceback", line)
+
+        for x in range(9):
+            # Skip ahead to first DEBUG line.
+            line = gen.next()
+
+        # First DEBUG line
+        self.assertIn("DEBUG", line)
+        self.assertIn("href='#_May_26_20_44_39_837651'", line)
+
+        # Second DEBUG line
+        self.assertIn("DEBUG", line)
+        self.assertIn("cinder-rootwrap", line)
+
     def test_devstack_filters(self):
         gen = self.get_generator('devstacklog.txt.gz')
         # dump the header

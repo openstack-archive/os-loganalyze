@@ -138,12 +138,18 @@ class SevFilter(object):
 
             logline = LogLine(line, old_sev)
 
-            if self.supports_sev and self.skip_by_sev(logline.status):
+            # Some log lines come without severity. Treat those as
+            # belonging to the previous non NONE severity so that we
+            # get those log lines associated to the proper level.
+            if logline.status != "NONE":
                 old_sev = logline.status
+            else:
+                logline.status = old_sev
+
+            if self.supports_sev and self.skip_by_sev(logline.status):
                 continue
 
             lineno += 1
-            old_sev = logline.status
             yield logline
 
     def skip_by_sev(self, sev):
