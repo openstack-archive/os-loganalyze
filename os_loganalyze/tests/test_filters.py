@@ -67,6 +67,11 @@ class TestFilters(base.TestCase):
         self.assertIn("class='DEBUG", line)
         self.assertIn("href='#_2013-09-27_18_22_11_249'", line)
 
+        # fourth is a CRITICAL
+        line = gen.next()
+        self.assertIn("class='CRITICAL", line)
+        self.assertIn("href='#_2013-09-27_18_22_11_249'", line)
+
     def test_systemd_filters(self):
         gen = self.get_generator('devstack@c-api.service.log.txt')
         # dump the header

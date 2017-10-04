@@ -35,10 +35,12 @@ SEVS = {
     'AUDIT': 3,
     'TRACE': 4,
     'WARNING': 5,
-    'ERROR': 6
+    'ERROR': 6,
+    'CRITICAL': 7,
     }
 
-SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR']
+SEVS_SEQ = ['NONE', 'DEBUG', 'INFO', 'AUDIT', 'TRACE', 'WARNING', 'ERROR',
+            'CRITICAL']
 
 ISO8601RE = r'\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d(.\d+)?'
 TIME_REGEX = r'\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d(.\d+)?'
@@ -96,12 +98,13 @@ class TestWsgiDisk(base.TestCase):
             'ERROR': 5
             },
         'screen-q-svc.txt.gz': {
-            'DEBUG': 43584,
+            'DEBUG': 43583,
             'INFO': 262,
             'AUDIT': 0,
             'TRACE': 589,
             'WARNING': 48,
             'ERROR': 72,
+            'CRITICAL': 1,
             },
         'screen-neutron-l3.txt.gz': {
             'DEBUG': 25212,

@@ -32,7 +32,7 @@ SUPPORTS_SEV = re.compile(
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
-STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT)'
+STATUSFMT = '(DEBUG|INFO|WARNING|ERROR|TRACE|AUDIT|CRITICAL)'
 
 OSLO_LOGMATCH = '^(?P<date>%s)(?P<line>(?P<pid> \d+)? (?P<status>%s).*)' % \
     (DATEFMT, STATUSFMT)
@@ -56,7 +56,8 @@ SEVS = {
     'AUDIT': 3,
     'TRACE': 4,
     'WARNING': 5,
-    'ERROR': 6
+    'ERROR': 6,
+    'CRITICAL': 7,
     }
 
 

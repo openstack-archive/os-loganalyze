@@ -27,6 +27,8 @@ a {color: #000; text-decoration: none}
 a:hover {text-decoration: underline}
 .DEBUG, .DEBUG a {color: #888}
 .ERROR, .ERROR a {color: #c00; font-weight: bold}
+.CRITICAL, .CRITICAL a {color: #c00; background-color: yellow;
+                        font-weight: bold}
 .TRACE, .TRACE a {color: #c60}
 .WARNING, .WARNING a {color: #D89100;  font-weight: bold}
 .INFO, .INFO a {color: #006}
