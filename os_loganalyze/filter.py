@@ -23,12 +23,12 @@ import os_loganalyze.util as util
 # which logs support severity
 SUPPORTS_SEV = re.compile(
     r'/'  # this uses an re.search so anchor the string
-    r'((screen-)?(n-|c-|g-|h-|ir-|ironic-|m-|o-|df-|'
+    r'((screen-)?(n-|c-|g-|h-|ir-|ironic-|m-|o-|df-|placement-api|'
     r'q-|neutron-|'  # support both lib/neutron and lib/neutron-legacy logs
     r'ceil|key|sah|des|tr)'  # openstack logs
     r'|(devstack\@)'  # systemd logs
     # other things we understand
-    r'|(keystone|placement-api|tempest)\.txt|syslog)')
+    r'|(keystone|tempest)\.txt|syslog)')
 
 SYSLOGDATE = '\w+\s+\d+\s+\d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
 DATEFMT = '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}((\.|\,)\d{3,6})?'
