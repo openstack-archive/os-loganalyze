@@ -57,7 +57,8 @@ Display level: [
 <a href='?level=AUDIT'>AUDIT</a> |
 <a href='?level=TRACE'>TRACE</a> |
 <a href='?level=WARNING'>WARNING</a> |
-<a href='?level=ERROR'>ERROR</a> ]
+<a href='?level=ERROR'>ERROR</a> |
+<a href='?level=CRITICAL'>CRITICAL</a> ]
 </span>"""
 
 HTML_HEADER_BODY = "\n<pre>"
