@@ -15,14 +15,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import os.path
 import re
 
 import os_loganalyze.generator as generator
 import os_loganalyze.util as util
 
 # which logs support severity
+# This uses re.match so you must match the left hand side.
 SUPPORTS_SEV = re.compile(
-    r'/'  # this uses an re.search so anchor the string
     r'((screen-)?(n-|c-|g-|h-|ir-|ironic-|m-|o-|df-|placement-api|'
     r'q-|neutron-|'  # support both lib/neutron and lib/neutron-legacy logs
     r'ceil|key|sah|des|tr)'  # openstack logs
@@ -118,8 +119,11 @@ class SevFilter(object):
     def __init__(self, file_generator, minsev="NONE", limit=None):
         self.minsev = minsev
         self.file_generator = file_generator
+        # To avoid matching strings in the log dir path we only consider the
+        # filename itself for severity support.
+        filename = os.path.basename(file_generator.logname)
         self.supports_sev = \
-            SUPPORTS_SEV.search(file_generator.logname) is not None
+            SUPPORTS_SEV.match(filename) is not None
         self.limit = limit
         self.strip_control = False
 
