@@ -46,7 +46,9 @@ pre span {
     display: block;
 }
 </style>
-<body>"""
+</head>
+<body>
+"""
 
 HTML_HEADER_SEV = """
 <span id='selector'>
