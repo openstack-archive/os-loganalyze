@@ -27,7 +27,7 @@ import os_loganalyze.view as osview
 
 def htmlify_stdin():
     out = sys.stdout
-    gen = osview.HTMLView(fileinput.FileInput())
+    gen = osview.HTMLView(osfilter.NoFilter(fileinput.FileInput()))
     for line in gen:
         out.write(line)
 

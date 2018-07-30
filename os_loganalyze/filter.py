@@ -182,7 +182,9 @@ class NoFilter(object):
 
     def __iter__(self):
         for line in self.file_generator:
-            yield Line(line)
+            l = Line(line)
+            l.status = "NONE"
+            yield l
 
 
 def get_filter_generator(file_generator, environ, root_path, config):
