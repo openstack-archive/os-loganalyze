@@ -43,6 +43,7 @@ pre span {
     padding-left: 22em;
     text-indent: -22em;
     white-space: pre-wrap;
+    word-break: break-all;
     display: block;
 }
 </style>
