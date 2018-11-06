@@ -26,7 +26,7 @@ import os_loganalyze.util as util
 SUPPORTS_SEV = re.compile(
     r'((screen-)?(n-|c-|g-|h-|ir-|ironic-|m-|o-|df-|placement-api|'
     r'q-|neutron-|'  # support both lib/neutron and lib/neutron-legacy logs
-    r'ceil|key|sah|des|tr)'  # openstack logs
+    r'ceil|key|sah|des|tr|sl)'  # openstack logs
     r'|(devstack\@)'  # systemd logs
     # other things we understand
     r'|(keystone|tempest)\.txt|syslog)')
