@@ -1,5 +1,0 @@
-OS_LOGANALYZE_DIR=$DEST/os-loganalyze
-OS_LOGANALYZE_APACHE_TEMPLATE=$OS_LOGANALYZE_DIR/devstack/os-loganalyze.template
-OS_LOGANALYZE_APACHE_DOCUMENTROOT=/var/www/logs
-
-enable_service os_loganalyze
